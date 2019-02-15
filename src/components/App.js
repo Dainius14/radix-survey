@@ -2,7 +2,8 @@ import React, { Component } from 'react';
 import { Switch, Route, Link } from 'react-router-dom'
 import '../App.css';
 import 'antd/dist/antd.css';
-import CreateSurvey from './CreateSurvey';
+import CreateSurvey from './NewSurvey';
+import SurveyList from './SurveyList';
 import NotFound404 from './NotFound404';
 import { Layout, Menu } from 'antd';
 const { Header, Content, Footer } = Layout;
@@ -10,28 +11,7 @@ const { Header, Content, Footer } = Layout;
 
 
 class App extends Component {
-  constructor(props) {
-    super(props);
-
-    this.state = props.states();
-  }
-
-
-  componentDidMount() {
-    const setState = this.setState.bind(this);
-    this.props.states.map(state => setState(state));
-
-    this.props.actions.questions.addQuestion();
-    Object.values(this.state.survey.questions).forEach(x => {
-      this.props.actions.answers.addAnswer(x.id);
-    });
-  }
-
-
   render() {
-    const state = this.state;
-    const actions = this.props.actions;
-
     return (
       <Layout className="layout" style={{ minHeight: '100%' }}>
         <Header>
@@ -42,6 +22,9 @@ class App extends Component {
             <Menu.Item key="1">
               <Link to='/create-survey'>Create a Survey</Link>
             </Menu.Item>
+            <Menu.Item key="2">
+              <Link to='/survey-list'>Survey List</Link>
+            </Menu.Item>
           </Menu>
         </Header>
 
@@ -51,9 +34,11 @@ class App extends Component {
 
             <Switch>
               <Route exact path='/(|create-survey)'
-                render={() => <CreateSurvey state={state} actions={actions} />} />
+                     component={CreateSurvey} />
+              <Route exact path='/survey-list'
+                     component={SurveyList} />
               <Route exact path='*'
-                component={NotFound404} />
+                     component={NotFound404} />
             </Switch>
 
 
