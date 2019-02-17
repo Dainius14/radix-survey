@@ -1,5 +1,6 @@
 import uuid from 'uuid/v4';
-import * as Actions from '../actions/NewSurveyTypes';
+import * as Actions from '../actions/NewSurveyActionTypes';
+
 
 const initialState = {
   title: '',
@@ -44,6 +45,67 @@ const newSurvey = (state = initialState, action) => {
           q
         )
       };
+
+
+      case Actions.ADD_ANSWER: {
+        const newAnswer = {
+          id: uuid(),
+          answerText: ''
+        };
+  
+        const question = state.questions.find(q => q.id === action.questionId);
+  
+        const newQuestion = {
+          ...question,
+          answers: [
+            ...question.answers,
+            newAnswer
+          ]
+        };
+  
+        const newQuestions = state.questions.map(q => q.id === action.questionId ? newQuestion : q);
+  
+        return {
+          ...state,
+          questions: newQuestions
+        };
+      }
+
+    case Actions.REMOVE_ANSWER: {
+      const question = state.questions.find(q => q.id === action.questionId);
+
+      const newQuestion = {
+        ...question,
+        answers: question.answers.filter(a => a.id !== action.answerId)
+      };
+
+      const newQuestions = state.questions.map(q => q.id === action.questionId ? newQuestion : q);
+
+      return {
+        ...state,
+        questions: newQuestions
+      };
+    }
+
+    case Actions.EDIT_ANSWER_PROPERTY: {
+      const question = state.questions.find(q => q.id === action.questionId);
+      const answer = question.answers.find(a => a.id === action.answerId);
+
+      const newAnswer = {
+        ...answer,
+        [action.property]: action.value
+      };
+
+      const newQuestion = {
+        ...question,
+        answers: question.answers.map(a => a.id === action.answerId ? newAnswer : a)
+      };
+
+      return {
+        ...state,
+        questions: state.questions.map(q => q.id === action.questionId ? newQuestion : q)
+      };
+    }
 
     default:
       return state;

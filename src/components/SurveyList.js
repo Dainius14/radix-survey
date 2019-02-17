@@ -1,24 +1,29 @@
-import React, { Component } from 'react';
-import { Card } from 'antd';
+import React from 'react';
+import { connect } from 'react-redux'
+import * as NewSurveyActions from '../actions/NewSurveyActions';
 
 
-class CreateSurvey extends Component {
-  render() {
-    const { state, actions } = this.props;
-    const survey = state.survey;
-
-    return (
-      <>
-        {Object.values(state.surveyList).map(survey => {
-          return (
-            <Card title="Some survey">
-              <p>Some survey about some shit</p>
-            </Card>
-          );
-        })}
-      </>
-    );
-  }
+function SurveyList({ state }) {
+  return (
+    <>
+      {state.map(survey => {
+        return (<div>test</div>);
+      })}
+    </>
+  );
 }
 
-export default CreateSurvey;
+function mapStateToProps(state) {
+  return { state: state.surveyList }
+}
+
+function mapDispatchToProps(dispatch) {
+  return {
+  }
+}; 
+
+
+export default connect(
+  mapStateToProps,
+  mapDispatchToProps
+)(SurveyList);

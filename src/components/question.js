@@ -1,15 +1,14 @@
-import React, { Component } from 'react';
+import React from 'react';
 import { connect } from 'react-redux'
-import { Form, Input, Button, Select, } from 'antd';
-// import RadioAnswer from './answerTypes/radio';
-// import CheckboxAnswer from './answerTypes/checkbox';
+import * as NewSurveyActions from '../actions/NewSurveyActions';
+import { Form, Input, Button, Select, Radio, Checkbox } from 'antd';
 import TextArea from 'antd/lib/input/TextArea';
 const InputGroup = Input.Group;
 const Option = Select.Option;
 
-function Question({ question, removeQuestion, editQuestion }) {
+function Question({ question, removeQuestion, editQuestion, addAnswer, removeAnswer, editAnswer }) {
   // console.log(things)
-  const { id, questionText, questionType } = question;
+  const { id, questionText, questionType, answers } = question;
   
   return (
     <Form.Item>
@@ -36,32 +35,56 @@ function Question({ question, removeQuestion, editQuestion }) {
       </InputGroup>
 
       
-        {/* {question.type !== 'text' && question.type !== 'long_text'
-        && Object.values(state.survey.answers).filter(x => x.questionId === questionId).map((answer, i) => {
-          if (question.type === 'radio')
-            return (
-              <RadioAnswer key={answer.id} answerId={answer.id} state={state} actions={actions} position={i + 1}/>
-            );
-          if (question.type === 'checkbox')
-            return (
-              <CheckboxAnswer key={answer.id} answerId={answer.id} state={state} actions={actions} position={i + 1}/>
-            );
-          return null;
-        })} */}
-      <br/>
+      {questionType !== 'text' && questionType !== 'long_text'
+      && answers.map((answer, i) => {
+        if (questionType === 'radio')
+          return (
+            <Radio key={answer.id}
+                   disabled={true}
+                   style={{ display: 'table' }}>
+              <Input placeholder={'Answer ' + (i + 1)}
+                     name="answerText"
+                     value={answer.answerText}
+                     onChange={e => editAnswer(question.id, answer.id, e.target.name, e.target.value)}
+                     />
+              <Button shape="circle" icon="close" style={{ border: 'none' }}
+                      onClick={() => removeAnswer(question.id, answer.id)} />
+            </Radio>
+          );
+        else if (questionType === 'checkbox') {
+          return (
+            <Checkbox key={answer.id}
+                      disabled={true}
+                      style={{ display: 'table', width: '60%', marginLeft: 0 }}>
+              <Input placeholder={'Answer ' + (i + 1)}
+                     style={{ width: '80%' }}
+                     name="answerText"
+                     value={answer.answerText}
+                     onChange={e => editAnswer(question.id, answer.id, e.target.name, e.target.value)}
+                     />
+              <Button shape="circle" icon="close" style={{ border: 'none' }}
+                      onClick={() => removeAnswer(question.id, answer.id)} />
+            </Checkbox>
+          );
 
-      {/* {questionType !== 'short_text' && questionType !== 'long_text' &&
-          <Button icon="plus"
-          // onClick={() => actions.answers.addAnswer(questionId)}
-          >Add answer</Button>
-      }
+        }
+        return null;
+      })}
+
+      <br/>
 
       {questionType === 'short_text' &&
         <Input placeholder="User's answer" disabled/>
       }
       {questionType === 'long_text' &&
         <TextArea placeholder="User's answer" disabled autosize={{ minRows: 2, maxRows: 6 }}/>
-      } */}
+      }
+
+      {questionType !== 'short_text' && questionType !== 'long_text' &&
+          <Button icon="plus" onClick={() => addAnswer(question.id)}>Add answer</Button>
+      }
+   
+
     </Form.Item>
 
   );
@@ -74,10 +97,12 @@ const mapStateToProps = (state, ownProps) => {
 }
 
 const mapDispatcherToProps = (dispatcher) => ({
-  // removeQuestion: (questionId) =>
-  //   dispatcher(NewSurveyActions.removeQuestion(questionId)),
-  // editQuestion: (questionId, property, value) =>
-  //   dispatcher(NewSurveyActions.editQuestionProperty(questionId, property, value))
+  addAnswer: (questionId) =>
+    dispatcher(NewSurveyActions.addAnswer(questionId)),
+  removeAnswer: (questionId, answerId) =>
+    dispatcher(NewSurveyActions.removeAnswer(questionId, answerId)),
+  editAnswer: (questionId, answerId, property, value) =>
+    dispatcher(NewSurveyActions.editAnswerProperty(questionId, answerId, property, value))
 });
 
 export default connect(

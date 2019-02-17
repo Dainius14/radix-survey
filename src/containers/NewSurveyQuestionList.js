@@ -2,7 +2,7 @@ import React from 'react';
 import { connect } from 'react-redux'
 import Question from '../components/Question';
 import { Button } from 'antd';
-import * as NewSurveyActions from '../actions';
+import * as NewSurveyActions from '../actions/NewSurveyActions';
 
 function NewSurveyQuestionList({ questions, addQuestion, removeQuestion, editQuestion }) {
   return(

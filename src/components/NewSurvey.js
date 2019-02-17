@@ -1,7 +1,7 @@
 import React from 'react';
 import { connect } from 'react-redux'
 import { Form, Input, Divider } from 'antd';
-import * as NewSurveyActions from '../actions';
+import * as NewSurveyActions from '../actions/NewSurveyActions';
 import NewSurveyQuestionList from '../containers/NewSurveyQuestionList';
 const { TextArea } = Input;
 
@@ -44,7 +44,7 @@ function mapStateToProps(state) {
 function mapDispatchToProps(dispatch) {
   return {
     editSurveyProperty: (property, value) =>
-      dispatch(NewSurveyActions.editSurveyProperty(property, value))
+      dispatch(NewSurveyActions.editSurveyProperty(property, value)),
   }
 }; 
 

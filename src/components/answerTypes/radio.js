@@ -1,22 +1,21 @@
-import React, { Component } from 'react';
+import React from 'react';
 import { Input, Radio, Button, } from 'antd';
 
-class RadioAnswer extends Component {
-  render() {
-    const { answerId, state, actions, position } = this.props;
-    const answer = state.survey.answers[answerId];
+function RadioAnswer({ state, position, removeAnswer }) {
+  const { id, answerText } = state;
 
-    return (
-      <Radio disabled={true}
-        style={{ display: 'table' }}>
-        <Input placeholder={'Answer ' + position}
-          value={answer.answerText}
-          onChange={e => actions.answers.editAnswerText(answer.id, e.target.value)} />
-        <Button shape="circle" icon="close" style={{ border: 'none' }}
-          onClick={() => actions.answers.deleteAnswer(answer.id)} />
-      </Radio>
-    );
-  }
+  return (
+    <Radio disabled={true}
+           style={{ display: 'table' }}>
+      <Input placeholder={'Answer ' + position}
+             value={answerText}
+            //  onChange={e => actions.answers.editAnswerText(answer.id, e.target.value)}
+             />
+      <Button shape="circle" icon="close" style={{ border: 'none' }}
+              onClick={() => removeAnswer(id)}
+              />
+    </Radio>
+  );
 }
 
 export default RadioAnswer;
