@@ -11,6 +11,12 @@ const rxMap = rxOperators.map;
 const APP_ID = 'dd-testing';
 
 const server = restify.createServer({});
+
+if (process.env.NODE_ENV != 'production') {
+  const cors = require('cors');
+  server.use(cors());
+}
+
 // console.log(restify)
 server.use(restify.plugins.bodyParser());
 server.use(restify.plugins.fullResponse());

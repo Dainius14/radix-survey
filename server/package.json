@@ -11,10 +11,12 @@
   "license": "MIT",
   "dependencies": {
     "nedb": "^1.8.0",
-    "radixdlt": "^1.0.6-alpha",
-    "restify": "^7.7.0",
-    "restify-errors": "^6.1.1",
+    "radixdlt": "^1.0.7-alpha",
+    "restify": "^8.0",
+    "restify-errors": "^7.0",
     "rxjs": "^6.4.0"
   },
-  "devDependencies": {}
+  "devDependencies": {
+    "cors": "^2.8.5"
+  }
 }
