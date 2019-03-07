@@ -1,110 +1,106 @@
 import uuid from 'uuid/v4';
-import * as Actions from '../actions/NewSurveyActionTypes';
+import * as Actions from '../actions/NewSurveyActions';
+import update from 'immutability-helper';
 
 
 const initialState = {
   title: '',
   shortDescription: '',
-  questions: []
+  questions: {
+    items: []
+  },
+  answers: {
+    items: []
+  }
 };
 
 const newSurvey = (state = initialState, action) => { 
   switch (action.type) {
-    case Actions.EDIT_SURVEY_PROPERTY:
-      return { ...state, [action.name]: action.value };
+    case Actions.EDIT_SURVEY_PROPERTY: {
+      const { property, value } = action;
+      return update(state, {
+        [property]: {$set: value}
+      });
+    }
 
-    case Actions.ADD_QUESTION:
+    case Actions.ADD_QUESTION: {
+      const { questionId } = action;
       const newQuestion = {
-        id: uuid(),
+        id: questionId,
         questionText: '',
         questionType: 'radio',
-        answers: []
       };
 
-      return {
-        ...state,
-        questions: [
-          ...state.questions,
-          newQuestion
-        ]
-      };
+      return update(state, {
+        questions: {
+          $merge: {[questionId]: newQuestion},
+          items: {$push: [questionId]}
+        }
+      });
+    }
 
-    case Actions.REMOVE_QUESTION:
-      return {
-        ...state,
-        questions: state.questions.filter(q => q.id !== action.questionId)
-      };
+    case Actions.REMOVE_QUESTION: {
+      const { questionId } = action;
+      const questionIndex = state.questions.items.indexOf(questionId);
+      return update(state, {
+        questions: {
+          $unset: [questionId],
+          items: {$splice: [[questionIndex, 1]]}
+        }
+      });
+    }
 
-    case Actions.EDIT_QUESTION_PROPERTY:
+    case Actions.EDIT_QUESTION_PROPERTY: {
       const { questionId, property, value } = action;
-      return {
-        ...state,
-        questions: state.questions.map(q => 
-          q.id === questionId ? 
-          { ...q, [property]: value } :
-          q
-        )
+      
+      return update(state, {
+        questions: {
+          [questionId]: {
+            [property]: {$set: value}
+          }
+        }
+      });
+    }
+
+
+    case Actions.ADD_ANSWER: {
+      const { answerId, questionId } = action;
+      const answer = {
+        id: answerId,
+        questionId,
+        answerText: ''
       };
 
-
-      case Actions.ADD_ANSWER: {
-        const newAnswer = {
-          id: uuid(),
-          answerText: ''
-        };
-  
-        const question = state.questions.find(q => q.id === action.questionId);
-  
-        const newQuestion = {
-          ...question,
-          answers: [
-            ...question.answers,
-            newAnswer
-          ]
-        };
-  
-        const newQuestions = state.questions.map(q => q.id === action.questionId ? newQuestion : q);
-  
-        return {
-          ...state,
-          questions: newQuestions
-        };
-      }
+      return update(state, {
+        answers: {
+          $merge: {[answerId]: answer},
+          items: {$push: [answerId]}
+        }
+      });
+    }
 
     case Actions.REMOVE_ANSWER: {
-      const question = state.questions.find(q => q.id === action.questionId);
+      const { answerId } = action;
+      const answerIndex = state.answers.items.indexOf(answerId);
 
-      const newQuestion = {
-        ...question,
-        answers: question.answers.filter(a => a.id !== action.answerId)
-      };
-
-      const newQuestions = state.questions.map(q => q.id === action.questionId ? newQuestion : q);
-
-      return {
-        ...state,
-        questions: newQuestions
-      };
+      return update(state, {
+        answers: {
+          $unset: [answerId],
+          items: {$splice: [[answerIndex, 1]]}
+        }
+      });
     }
 
     case Actions.EDIT_ANSWER_PROPERTY: {
-      const question = state.questions.find(q => q.id === action.questionId);
-      const answer = question.answers.find(a => a.id === action.answerId);
-
-      const newAnswer = {
-        ...answer,
-        [action.property]: action.value
-      };
-
-      const newQuestion = {
-        ...question,
-        answers: question.answers.map(a => a.id === action.answerId ? newAnswer : a)
-      };
-
-      return {
-        ...state,
-        questions: state.questions.map(q => q.id === action.questionId ? newQuestion : q)
-      };
+      const { answerId, property, value } = action;
+      
+      return update(state, {
+        answers: {
+          [answerId]: {
+            [property]: {$set: value}
+          }
+        }
+      });
     }
 
     default:

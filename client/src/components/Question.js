@@ -6,9 +6,8 @@ import TextArea from 'antd/lib/input/TextArea';
 const InputGroup = Input.Group;
 const Option = Select.Option;
 
-function Question({ question, removeQuestion, editQuestion, addAnswer, removeAnswer, editAnswer }) {
-  // console.log(things)
-  const { id, questionText, questionType, answers } = question;
+function Question({ question, answers, removeQuestion, editQuestion, addAnswer, removeAnswer, editAnswer }) {
+  const { id, questionText, questionType } = question;
   
   return (
     <Form.Item>
@@ -34,9 +33,10 @@ function Question({ question, removeQuestion, editQuestion, addAnswer, removeAns
 
       </InputGroup>
 
-      
       {questionType !== 'text' && questionType !== 'long_text'
-      && answers.map((answer, i) => {
+      && answers.items.filter(a => answers[a].questionId == question.id).map((answerId, i) => {
+        const answer = answers[answerId];
+
         if (questionType === 'radio')
           return (
             <Radio key={answer.id}
@@ -45,10 +45,10 @@ function Question({ question, removeQuestion, editQuestion, addAnswer, removeAns
               <Input placeholder={'Answer ' + (i + 1)}
                      name="answerText"
                      value={answer.answerText}
-                     onChange={e => editAnswer(question.id, answer.id, e.target.name, e.target.value)}
+                     onChange={e => editAnswer(answer.id, e.target.name, e.target.value)}
                      />
               <Button shape="circle" icon="close" style={{ border: 'none' }}
-                      onClick={() => removeAnswer(question.id, answer.id)} />
+                      onClick={() => removeAnswer(answer.id)} />
             </Radio>
           );
         else if (questionType === 'checkbox') {
@@ -60,10 +60,10 @@ function Question({ question, removeQuestion, editQuestion, addAnswer, removeAns
                      style={{ width: '80%' }}
                      name="answerText"
                      value={answer.answerText}
-                     onChange={e => editAnswer(question.id, answer.id, e.target.name, e.target.value)}
+                     onChange={e => editAnswer(answer.id, e.target.name, e.target.value)}
                      />
               <Button shape="circle" icon="close" style={{ border: 'none' }}
-                      onClick={() => removeAnswer(question.id, answer.id)} />
+                      onClick={() => removeAnswer(answer.id)} />
             </Checkbox>
           );
 
@@ -83,7 +83,7 @@ function Question({ question, removeQuestion, editQuestion, addAnswer, removeAns
       {questionType !== 'short_text' && questionType !== 'long_text' &&
           <Button icon="plus" onClick={() => addAnswer(question.id)}>Add answer</Button>
       }
-   
+    
 
     </Form.Item>
 
@@ -92,17 +92,18 @@ function Question({ question, removeQuestion, editQuestion, addAnswer, removeAns
 
 const mapStateToProps = (state, ownProps) => {
   return {
-    question: state.newSurvey.questions.find(q => q.id == ownProps.question.id)
+    question: state.newSurvey.questions[ownProps.question.id],
+    answers: state.newSurvey.answers
   };
 }
 
 const mapDispatcherToProps = (dispatcher) => ({
   addAnswer: (questionId) =>
     dispatcher(NewSurveyActions.addAnswer(questionId)),
-  removeAnswer: (questionId, answerId) =>
-    dispatcher(NewSurveyActions.removeAnswer(questionId, answerId)),
-  editAnswer: (questionId, answerId, property, value) =>
-    dispatcher(NewSurveyActions.editAnswerProperty(questionId, answerId, property, value))
+  removeAnswer: (answerId) =>
+    dispatcher(NewSurveyActions.removeAnswer(answerId)),
+  editAnswer: (answerId, property, value) =>
+    dispatcher(NewSurveyActions.editAnswerProperty(answerId, property, value))
 });
 
 export default connect(

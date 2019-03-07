@@ -7,7 +7,8 @@ import * as NewSurveyActions from '../actions/NewSurveyActions';
 function NewSurveyQuestionList({ questions, addQuestion, removeQuestion, editQuestion }) {
   return(
     <>
-      {questions.map(q => {
+      {questions.items.map(questionId => {
+        const q = questions[questionId];
         return <Question key={q.id} question={q} removeQuestion={removeQuestion} editQuestion={editQuestion} />;
       })}
       <Button icon="plus" onClick={addQuestion}>Add question</Button>
