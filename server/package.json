@@ -10,13 +10,13 @@
   "author": "Dainius Dauksevicius",
   "license": "MIT",
   "dependencies": {
+    "ajv": "^6.10.0",
     "nedb": "^1.8.0",
     "radixdlt": "^1.0.7-alpha",
     "restify": "^8.0",
+    "restify-cors-middleware": "^1.1.1",
     "restify-errors": "^7.0",
     "rxjs": "^6.4.0"
   },
-  "devDependencies": {
-    "cors": "^2.8.5"
-  }
+  "devDependencies": {}
 }

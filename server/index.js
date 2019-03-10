@@ -4,17 +4,22 @@ const fs = require('fs');
 const radix = require('radixdlt');
 const Datastore = require('nedb');
 const utils = require('./utils');
+const Ajv = require('ajv');
+const ajv = Ajv({ allErrors: true });
 const rxOperators = require('rxjs/operators');
 const rxFilter = rxOperators.filter;
 const rxMap = rxOperators.map;
 
-const APP_ID = 'dd-testing';
+const APP_ID = 'dd-testing-2';
 
 const server = restify.createServer({});
 
 if (process.env.NODE_ENV != 'production') {
-  const cors = require('cors');
-  server.use(cors());
+  const corsMiddleware  = require('restify-cors-middleware')
+  const cors = corsMiddleware({ allowHeaders: ['Content-Type'] });
+  // server.use(cors({ allowHeaders: ['Content-Type'] }));
+  server.pre(cors.preflight)
+  server.use(cors.actual)
 }
 
 // console.log(restify)
@@ -78,8 +83,10 @@ fs.readFile('file.key', function(error, key) {
 
 
 
-server.get('/api/survey-list', (req, res, next) => {
-  db.find({/*  timestamps: { default: 1548848339432 }  */})
+// server.options('*', cors());
+
+server.get('/api/surveys', (req, res, next) => {
+  db.find({ applicationId: APP_ID })
     .exec((error, docs) => {
     if (error) {
       return next(new errors.InternalServerError(error))
@@ -90,10 +97,10 @@ server.get('/api/survey-list', (req, res, next) => {
       return b.timestamps.default - a.timestamps.default;
     });
 
-    const takeNDocs = sortedDocs.slice(0, 5);
+    // const takeNDocs = sortedDocs.slice(0, 5);
 
     // Prepare data
-    const data = takeNDocs.map(x => {
+    const data = docs.map(x => {
       let payload = x.payload;
       try {
         payload = JSON.parse(payload);
@@ -114,14 +121,25 @@ server.get('/api/survey-list', (req, res, next) => {
 });
 
 server.post('/api/create-survey', (req, res, next) => {
-  const jsonData = JSON.stringify(req.body);
+  const isValid = testSchema(req.body);
+  if (!isValid) {
+    return next(
+      new errors.BadRequestError(JSON.stringify(isValid.errors))
+    );
+  }
+  
+  // Request valid
+  const id = utils.random();
+  const data = Object.assign({}, req.body, { id });
+  const jsonData = JSON.stringify(data);
+
   radix.RadixTransactionBuilder
     .createPayloadAtom([identity.account], APP_ID, jsonData)
     .signAndSubmit(identity)
     .subscribe({
         next: item => {},
         complete:() => {
-          res.send({ status: 'Stored' });
+          res.send({ id });
           next();
         },
         error: error => {
@@ -131,6 +149,44 @@ server.post('/api/create-survey', (req, res, next) => {
         }
   });
 });
+
+const schema = {
+  type: 'object',
+  additionalProperties: false,
+  required: ['title', 'shortDescription', 'questions', 'answers'],
+  properties: {
+    title: {
+      type: 'string',
+      minLength: 0,
+      maxLength: 50
+    },
+    shortDescription: {
+      type: 'string',
+      minLength: 0,
+      maxLength: 200
+    },
+    questions: {
+      type: 'object',
+      required: ['items'],
+      properties: {
+        items: {
+          type: 'array'
+        }
+      }
+    },
+    answers: {
+      type: 'object',
+      required: ['items'],
+      properties: {
+        items: {
+          type: 'array'
+        }
+      }
+    },
+  }
+};
+const testSchema = ajv.compile(schema);
+
 
 server.listen(8080, function() {
   console.log('%s listening at %s', server.name, server.url);

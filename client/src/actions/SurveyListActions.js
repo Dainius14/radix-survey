@@ -19,11 +19,13 @@ export function fetchSurveyList() {
   return dispatch => {
     dispatch(requestSurveys());
     
-    return fetch('http://localhost:8080/api/survey-list')
+    return fetch('http://localhost:8080/api/surveys')
       .then(response => response.json(), error => console.log(error))
       .then(json => {
-        dispatch(receiveSurveys(json))
+        dispatch(receiveSurveys(json));
+        console.log('Surveys', json)
       })
   }
 }
+
 

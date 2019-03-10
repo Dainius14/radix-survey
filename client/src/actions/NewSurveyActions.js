@@ -1,3 +1,5 @@
+import fetch from 'cross-fetch';
+
 export const EDIT_SURVEY_PROPERTY = 'CHANGE_NEW_SURVEY_INPUT_VALUE';
 export const editSurveyProperty = (property, value) => ({
   type: EDIT_SURVEY_PROPERTY,
@@ -48,10 +50,34 @@ export const editAnswerProperty = (answerId, property, value) => ({
   value
 });
 
-export const POST_SURVEY = 'POST_SURVEY';
+export const POST_SURVEY_REQUEST = 'POST_SURVEY_REQUEST';
+export const postSurveyRequest = () => ({
+  type: POST_SURVEY_REQUEST
+});
+
+export const POST_SURVEY_RESPONSE = 'POST_SURVEY_RESPONSE';
+export const postSurveyResponse = (response) => ({
+  type: POST_SURVEY_RESPONSE,
+  response
+});
+
+
 export function postSurvey(survey) {
-  return {
-    type: POST_SURVEY,
-    survey
-  };
+  return dispatch => {
+    dispatch(postSurveyRequest());
+    console.log('survey', survey);
+    
+    return fetch('http://localhost:8080/api/create-survey', {
+        method: 'POST',
+        // mode: 'no-cors', // no-cors, cors, *same-origin
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(survey)
+      })
+      .then(response => response.json(), error => console.log(error))
+      .then(json => {
+        dispatch(postSurveyResponse(json))
+      });
+  }
 }

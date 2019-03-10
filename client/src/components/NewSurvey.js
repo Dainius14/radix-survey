@@ -1,12 +1,12 @@
 import React from 'react';
 import { connect } from 'react-redux'
-import { Form, Input, Divider } from 'antd';
+import { Form, Input, Divider, Button } from 'antd';
 import * as NewSurveyActions from '../actions/NewSurveyActions';
 import NewSurveyQuestionList from '../containers/NewSurveyQuestionList';
 const { TextArea } = Input;
 
 
-function CreateSurvey({ state, editSurveyProperty }) {
+function CreateSurvey({ state, editSurveyProperty, postSurvey }) {
   const { title, shortDescription } = state;
 
   return (
@@ -32,7 +32,11 @@ function CreateSurvey({ state, editSurveyProperty }) {
       <Divider />
 
       <NewSurveyQuestionList />
+      
+      <Divider />
 
+      
+      <Button onClick={() => postSurvey(state)}>Post survey</Button>
     </Form>
   );
 }
@@ -45,6 +49,8 @@ function mapDispatchToProps(dispatch) {
   return {
     editSurveyProperty: (property, value) =>
       dispatch(NewSurveyActions.editSurveyProperty(property, value)),
+    postSurvey: (survey) =>
+      dispatch(NewSurveyActions.postSurvey(survey))
   }
 }; 
 
