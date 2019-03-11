@@ -1,8 +1,8 @@
 import { combineReducers } from 'redux';
 import newSurvey from './newSurvey';
-import surveyList from './surveyList';
+import surveys from './surveyList';
 
 export default combineReducers({
   newSurvey,
-  surveyList
+  surveys
 });

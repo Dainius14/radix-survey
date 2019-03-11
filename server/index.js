@@ -81,50 +81,51 @@ fs.readFile('file.key', function(error, key) {
 });
 
 
-
-
-// server.options('*', cors());
-
 server.get('/api/surveys', (req, res, next) => {
   db.find({ applicationId: APP_ID })
     .exec((error, docs) => {
-    if (error) {
-      return next(new errors.InternalServerError(error))
-    }
+      if (error) {
+        return next(new errors.InternalServerError(error))
+      }
 
-    // Sort from newest to oldest
-    const sortedDocs = docs.sort((a, b) => {
-      return b.timestamps.default - a.timestamps.default;
-    });
+      // Sort from newest to oldest
+      const sortedDocs = docs.sort((a, b) => {
+        return b.timestamps.default - a.timestamps.default;
+      });
 
-    // const takeNDocs = sortedDocs.slice(0, 5);
+      // const takeNDocs = sortedDocs.slice(0, 5);
 
-    // Prepare data
-    const data = docs.map(x => {
-      let payload = x.payload;
-      try {
-        payload = JSON.parse(payload);
-      } catch (e) {}
+      // Prepare data
+      const data = sortedDocs.reduce((acc, x) => {
+        let payload = x.payload;
+        try {
+          payload = JSON.parse(payload);
+        } catch (e) {}
 
-      return {
-        payload: payload,
-        timestamp: x.timestamps.default,
-        date: utils.timestampToHumanISODate(x.timestamps.default),
-        applicationId: x.applicationId,
-        id: x._id,
-        // raw: x
-      };
-    });
-    res.send(data);
-    return next();
+        if (payload.title) {
+          acc[payload.id] = payload;
+          acc.items.push(payload.id);
+        }
+        return acc;
+        //   payload: payload,
+        //   timestamp: x.timestamps.default,
+        //   date: utils.timestampToHumanISODate(x.timestamps.default),
+        //   applicationId: x.applicationId,
+        //   id: x._id,
+        //   // raw: x
+        // };
+      }, { items: [] });
+      res.send(data);
+      return next();
   });
 });
 
 server.post('/api/create-survey', (req, res, next) => {
   const isValid = testSchema(req.body);
   if (!isValid) {
+    console.log(ajv.errorsText(testSchema.errors))
     return next(
-      new errors.BadRequestError(JSON.stringify(isValid.errors))
+      new errors.BadRequestError(JSON.stringify(testSchema.errors))
     );
   }
   

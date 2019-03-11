@@ -3,7 +3,8 @@ import { Switch, Route, Link } from 'react-router-dom'
 import '../App.css';
 import 'antd/dist/antd.css';
 import CreateSurvey from './NewSurvey';
-import SurveyList from './SurveyList';
+import Survey from './Survey';
+import SurveyList from '../containers/SurveyList';
 import NotFound404 from './NotFound404';
 import { Layout, Menu } from 'antd';
 const { Header, Content, Footer } = Layout;
@@ -23,7 +24,7 @@ class App extends Component {
               <Link to='/create-survey'>Create a Survey</Link>
             </Menu.Item>
             <Menu.Item key="2">
-              <Link to='/survey-list'>Survey List</Link>
+              <Link to='/surveys'>Surveys</Link>
             </Menu.Item>
           </Menu>
         </Header>
@@ -35,8 +36,10 @@ class App extends Component {
             <Switch>
               <Route exact path='/(|create-survey)'
                      component={CreateSurvey} />
-              <Route exact path='/survey-list'
+              <Route exact path='/surveys'
                      component={SurveyList} />
+              <Route exact path='/surveys/:surveyId'
+                     component={Survey} />
               <Route exact path='*'
                      component={NotFound404} />
             </Switch>
