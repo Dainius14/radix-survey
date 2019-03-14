@@ -62,6 +62,7 @@ export const postSurveyResponse = (response) => ({
 });
 
 
+
 export function postSurvey(survey) {
   return dispatch => {
     dispatch(postSurveyRequest());
@@ -69,7 +70,6 @@ export function postSurvey(survey) {
     
     return fetch('http://localhost:8080/api/create-survey', {
         method: 'POST',
-        // mode: 'no-cors', // no-cors, cors, *same-origin
         headers: {
           'Content-Type': 'application/json'
         },
@@ -81,3 +81,4 @@ export function postSurvey(survey) {
       });
   }
 }
+

@@ -1,4 +1,3 @@
-import uuid from 'uuid/v4';
 import * as Actions from '../actions/NewSurveyActions';
 import update from 'immutability-helper';
 
@@ -113,6 +112,7 @@ const newSurvey = (state = initialState, action) => {
       console.log('got response', response);
       return state;
     }
+
 
     default:
       return state;

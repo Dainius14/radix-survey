@@ -34,7 +34,7 @@ function Question({ question, answers, removeQuestion, editQuestion, addAnswer, 
       </InputGroup>
 
       {questionType !== 'text' && questionType !== 'long_text'
-      && answers.items.filter(a => answers[a].questionId == question.id).map((answerId, i) => {
+      && answers.items.filter(a => answers[a].questionId === question.id).map((answerId, i) => {
         const answer = answers[answerId];
 
         if (questionType === 'radio')

@@ -34,6 +34,11 @@ server.use((req, res, next) => {
   return next();
 })
 
+// For testing purposes add some delay for response
+server.use((req, res, next) => {
+  setTimeout(() => next(), 1000);
+});
+
 // Create Radix identity
 const db = new Datastore({ filename: './cache.db', autoload: true });
 let identity;
@@ -103,8 +108,9 @@ server.get('/api/surveys', (req, res, next) => {
         } catch (e) {}
 
         if (payload.title) {
-          acc[payload.id] = payload;
-          acc.items.push(payload.id);
+          acc[x._id] = payload;
+          acc[x._id].id = x._id;
+          acc.items.push(x._id);
         }
         return acc;
         //   payload: payload,
@@ -116,6 +122,30 @@ server.get('/api/surveys', (req, res, next) => {
         // };
       }, { items: [] });
       res.send(data);
+      return next();
+  });
+});
+
+server.get('/api/surveys/:survey_id', (req, res, next) => {
+  db.findOne({ applicationId: APP_ID, _id: req.params.survey_id })
+    .exec((error, doc) => {
+      if (error) {
+        return next(new errors.InternalServerError(error))
+      }
+      console.log(req.params.survey_id)
+
+      if (!doc) {
+        return next(new errors.NotFoundError());
+      }
+
+      let payload = doc.payload;
+      try {
+        payload = JSON.parse(payload);
+      } catch (e) {}
+
+      payload.id = doc._id;
+
+      res.send(payload);
       return next();
   });
 });

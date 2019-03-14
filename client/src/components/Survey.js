@@ -1,51 +1,57 @@
 import React from 'react';
 import { connect } from 'react-redux';
-import { withRouter } from 'react-router-dom';
-import { Form, Input, Divider, Button } from 'antd';
-import * as NewSurveyActions from '../actions/NewSurveyActions';
-import NewSurveyQuestionList from '../containers/NewSurveyQuestionList';
-const { TextArea } = Input;
+import { Divider, Button, Spin } from 'antd';
+import * as SurveyListActions from '../actions/SurveyListActions';
 
 
-function Survey({ survey, match, editSurveyProperty, postSurvey }) {
-  const { title, shortDescription } = survey;
+class Survey extends React.Component {
+  
+  componentDidMount() {
+    const { survey, match, getSurvey } = this.props;
+    if (!survey) {
+      getSurvey(match.params.surveyId);
+    }
+  }
 
-  return ( <div>{title}</div>
-    // <Form layout="vertical">
+  render() {
+    const { survey } = this.props;
 
-    //   <Form.Item label="Title">
-    //     <Input placeholder="Title of your survey"
-    //           name="title"
-    //           required={true}
-    //           value={title}
-    //           onChange={(event) => editSurveyProperty(event.target.name, event.target.value)}
-    //           />
-    //   </Form.Item>
+    if (!survey) {
+      return (
+        <div style={{ marginTop: 10 }}>
+          <Spin spinning={!survey}/>
+        </div>
+      );
+    }
 
-    //   <Form.Item label="Description">
-    //     <TextArea placeholder="Short description of your survey" rows={3}
-    //               name="shortDescription"
-    //               value={shortDescription}
-    //               onChange={(event) => editSurveyProperty(event.target.name, event.target.value)}
-    //               />
-    //   </Form.Item>
+    // Got survey, can render it
+    const { title, shortDescription } = survey;
+    return (
+      <>
+        <h1>{title}</h1>
+        <p>{shortDescription}</p>
 
-    //   <Divider />
+        <Divider/>
 
-    //   <NewSurveyQuestionList />
-      
-    //   <Divider />
+        {survey.questions.items.map(questionId => {
+          const question = survey.questions[questionId];
 
-      
-    //   <Button onClick={() => postSurvey(state)}>Post survey</Button>
-    // </Form>
-  );
+          return (
+            <div key={questionId}>
+              <h2>{question.questionText}</h2>
+            </div>
+          );
+        })}
+
+        <Button>Submit answers</Button>
+      </>
+    );
+  }
 }
 
 function mapStateToProps(state, ownProps) {
-  console.log('state', state);
-  console.log('ownProps', ownProps);
   return {
+    isLoading: state.surveys.isLoading,
     survey: state.surveys.data[ownProps.match.params.surveyId],
     match: ownProps.match
   }
@@ -53,6 +59,8 @@ function mapStateToProps(state, ownProps) {
 
 function mapDispatchToProps(dispatch) {
   return {
+    getSurvey: (surveyId) => 
+      dispatch(SurveyListActions.getSurvey(surveyId))
     // editSurveyProperty: (property, value) =>
     //   dispatch(NewSurveyActions.editSurveyProperty(property, value)),
     // postSurvey: (survey) =>

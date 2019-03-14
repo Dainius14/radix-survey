@@ -15,7 +15,18 @@ export function receiveSurveys(data) {
   };
 }
 
-export function fetchSurveyList() {
+export const GET_SURVEY_REQUEST = 'GET_SURVEY_REQUEST';
+export const getSurveyRequest = () => ({
+  type: GET_SURVEY_REQUEST
+});
+
+export const GET_SURVEY_RESPONSE = 'GET_SURVEY_RESPONSE';
+export const getSurveyResponse = (response) => ({
+  type: GET_SURVEY_RESPONSE,
+  response
+});
+
+export function getSurveys() {
   return dispatch => {
     dispatch(requestSurveys());
     
@@ -29,3 +40,17 @@ export function fetchSurveyList() {
 }
 
 
+
+export function getSurvey(surveyId) {
+  return dispatch => {
+    dispatch(getSurveyRequest());
+    
+    return fetch(`http://localhost:8080/api/surveys/${surveyId}`, {
+        method: 'GET',
+      })
+      .then(response => response.json(), error => console.log(error))
+      .then(json => {
+        dispatch(getSurveyResponse(json))
+      });
+  }
+}
