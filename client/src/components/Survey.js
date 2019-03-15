@@ -1,6 +1,6 @@
 import React from 'react';
 import { connect } from 'react-redux';
-import { Divider, Button, Spin } from 'antd';
+import { Divider, Button, Spin, Input } from 'antd';
 import * as SurveyListActions from '../actions/SurveyListActions';
 
 
@@ -39,6 +39,10 @@ class Survey extends React.Component {
           return (
             <div key={questionId}>
               <h2>{question.questionText}</h2>
+
+              {question.question_type === 'short_text' &&
+                <Input></Input>
+              }
             </div>
           );
         })}

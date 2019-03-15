@@ -1,4 +1,5 @@
 import fetch from 'cross-fetch';
+import { checkIfResponseOk } from '../utilities';
 
 export const EDIT_SURVEY_PROPERTY = 'CHANGE_NEW_SURVEY_INPUT_VALUE';
 export const editSurveyProperty = (property, value) => ({
@@ -55,10 +56,16 @@ export const postSurveyRequest = () => ({
   type: POST_SURVEY_REQUEST
 });
 
-export const POST_SURVEY_RESPONSE = 'POST_SURVEY_RESPONSE';
-export const postSurveyResponse = (response) => ({
-  type: POST_SURVEY_RESPONSE,
-  response
+export const POST_SURVEY_SUCCESS = 'POST_SURVEY_SUCCESS';
+export const postSurveySuccess = (data) => ({
+  type: POST_SURVEY_SUCCESS,
+  data
+});
+
+export const POST_SURVEY_ERROR = 'POST_SURVEY_ERROR';
+export const postSurveyError = (error) => ({
+  type: POST_SURVEY_ERROR,
+  error
 });
 
 
@@ -66,7 +73,6 @@ export const postSurveyResponse = (response) => ({
 export function postSurvey(survey) {
   return dispatch => {
     dispatch(postSurveyRequest());
-    console.log('survey', survey);
     
     return fetch('http://localhost:8080/api/create-survey', {
         method: 'POST',
@@ -75,9 +81,18 @@ export function postSurvey(survey) {
         },
         body: JSON.stringify(survey)
       })
-      .then(response => response.json(), error => console.log(error))
-      .then(json => {
-        dispatch(postSurveyResponse(json))
+      .then(checkIfResponseOk)
+      .then(response => {
+        console.debug('postSurvey() response:', response);
+        return response.json();
+      })
+      .then(responseJson => {
+        console.debug('postSurvey() json:', responseJson);
+        dispatch(postSurveySuccess(responseJson));
+      })
+      .catch(error => {
+        console.error('postSurvey() error:', error);
+        dispatch(postSurveyError(error));
       });
   }
 }

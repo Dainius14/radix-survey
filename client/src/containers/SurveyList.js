@@ -18,11 +18,16 @@ class SurveyList extends React.Component {
   render() {
     const { surveys } = this.props;
 
-    if (!surveys.allLoaded) {
+    if (surveys.isLoading) {
       return (
         <div style={{ marginTop: 10 }}>
           <Spin spinning={surveys.isLoading}/>
         </div>
+      );
+    }
+    if (surveys.error) {
+      return (
+        <div style={{ marginTop: 10 }}>{surveys.error.toString()}</div>
       );
     }
 

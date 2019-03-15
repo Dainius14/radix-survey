@@ -5,7 +5,8 @@ import { Menu, Layout } from 'antd';
 function Header(props) {
   // TODO properly handle url of here
   const pathname = props.location.pathname;
-  const selectedIndex = ['/create-survey', '/surveys'].findIndex(x => pathname.startsWith(x)).toString();
+  const foundIndex = ['/create-survey', '/surveys'].findIndex(x => pathname.startsWith(x));
+  const selectedIndex = foundIndex !== -1 ? foundIndex.toString() : '1';
   return (
     <Layout.Header>
       <Menu theme="dark"

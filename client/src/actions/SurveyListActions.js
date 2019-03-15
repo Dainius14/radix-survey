@@ -1,17 +1,26 @@
 import fetch from 'cross-fetch';
+import { checkIfResponseOk } from '../utilities';
 
-export const REQUEST_SURVEYS = 'REQUEST_SURVEYS';
-export function requestSurveys() {
+export const GET_SURVEYS_REQUEST = 'GET_SURVEYS_REQUEST';
+export function getSurveysRequest() {
   return {
-    type: REQUEST_SURVEYS
+    type: GET_SURVEYS_REQUEST
   };
 }
 
-export const RECEIVE_SURVEYS = 'RECEIVE_SURVEYS';
-export function receiveSurveys(data) {
+export const GET_SURVEYS_SUCCESS = 'GET_SURVEYS_SUCCESS';
+export function getSurveysSuccess(data) {
   return {
-    type: RECEIVE_SURVEYS,
-    data: data
+    type: GET_SURVEYS_SUCCESS,
+    data
+  };
+}
+
+export const GET_SURVEYS_ERROR = 'GET_SURVEYS_ERROR';
+export function getSurveysError(error) {
+  return {
+    type: GET_SURVEYS_ERROR,
+    error
   };
 }
 
@@ -20,22 +29,36 @@ export const getSurveyRequest = () => ({
   type: GET_SURVEY_REQUEST
 });
 
-export const GET_SURVEY_RESPONSE = 'GET_SURVEY_RESPONSE';
-export const getSurveyResponse = (response) => ({
-  type: GET_SURVEY_RESPONSE,
+export const GET_SURVEY_SUCCESS = 'GET_SURVEY_SUCCESS';
+export const getSurveySuccess = (response) => ({
+  type: GET_SURVEY_SUCCESS,
   response
+});
+export const GET_SURVEY_ERROR = 'GET_SURVEY_ERROR';
+export const getSurveyError = (error) => ({
+  type: GET_SURVEY_ERROR,
+  error
 });
 
 export function getSurveys() {
   return dispatch => {
-    dispatch(requestSurveys());
-    
-    return fetch('http://localhost:8080/api/surveys')
-      .then(response => response.json(), error => console.log(error))
-      .then(json => {
-        dispatch(receiveSurveys(json));
-        console.log('Surveys', json)
+    dispatch(getSurveysRequest());
+    return fetch('http://localhost:8080/api/surveys', {
+        method: 'GET'
       })
+      .then(checkIfResponseOk)
+      .then(response => {
+        console.debug('getSurveys() response:', response);
+        return response.json();
+      })
+      .then(responseJson => {
+        console.debug('getSurveys() json:', responseJson);
+        dispatch(getSurveysSuccess(responseJson));
+      })
+      .catch(error => {
+        console.error('getSurveys() error:', error);
+        dispatch(getSurveysError(error));
+      });
   }
 }
 
@@ -46,11 +69,20 @@ export function getSurvey(surveyId) {
     dispatch(getSurveyRequest());
     
     return fetch(`http://localhost:8080/api/surveys/${surveyId}`, {
-        method: 'GET',
+        method: 'GET'
       })
-      .then(response => response.json(), error => console.log(error))
-      .then(json => {
-        dispatch(getSurveyResponse(json))
+      .then(checkIfResponseOk)
+      .then(response => {
+        console.debug('getSurvey() response:', response);
+        return response.json();
+      })
+      .then(responseJson => {
+        console.debug('getSurveys() json:', responseJson);
+        dispatch(getSurveySuccess(responseJson));
+      })
+      .catch(error => {
+        console.error('getSurvey() error:', error);
+        dispatch(getSurveyError(error));
       });
   }
 }

@@ -103,13 +103,14 @@ const newSurvey = (state = initialState, action) => {
     }
 
     case Actions.POST_SURVEY_REQUEST: {
-      console.log('posting survey to server');
       return state;
     }
 
-    case Actions.POST_SURVEY_RESPONSE: {
-      const { response } = action;
-      console.log('got response', response);
+    case Actions.POST_SURVEY_SUCCESS: {
+      return state;
+    }
+    
+    case Actions.POST_SURVEY_ERROR: {
       return state;
     }
 

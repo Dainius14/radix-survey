@@ -4,6 +4,7 @@ import update from 'immutability-helper';
 const initialState = {
   isLoading: true,
   allLoaded: false,
+  error: null,
   data: {
     items: []
   }
@@ -11,32 +12,52 @@ const initialState = {
 
 const surveys = (state = initialState, action) => { 
   switch (action.type) {
-    case Actions.REQUEST_SURVEYS: {
-      return Object.assign({}, state, { isLoading: true });
+    case Actions.GET_SURVEYS_REQUEST: {
+      return update(state, {
+        isLoading: {$set: true},
+        error: {$set: null}
+      });
     }
 
-    case Actions.RECEIVE_SURVEYS: {
+    case Actions.GET_SURVEYS_SUCCESS: {
       return update(state, {
+        error: {$set: null},
         isLoading: {$set: false},
         allLoaded: {$set: true},
         data: {$set: action.data}
       });
     }
 
+    case Actions.GET_SURVEYS_ERROR: {
+      return update(state, {
+        error: {$set: action.error},
+        isLoading: {$set: false},
+      });
+    }
+
     case Actions.GET_SURVEY_REQUEST: {
       return update(state, {
+        error: {$set: null},
         isLoading: {$set: true}
       });
     }
 
-    case Actions.GET_SURVEY_RESPONSE: {
-      const { response } = action;
+    case Actions.GET_SURVEY_SUCCESS: {
+      const { data } = action;
       return update(state, {
+        error: {$set: null},
         isLoading: {$set: false},
         data: {
-          $merge: {[response.id]: response},
-          items: {$push: [response.id]}
+          $merge: {[data.id]: data},
+          items: {$push: [data.id]}
         }
+      });
+    }
+
+    case Actions.GET_SURVEY_ERROR: {
+      return update(state, {
+        isLoading: {$set: false},
+        error: {$set: action.error}
       });
     }
 
