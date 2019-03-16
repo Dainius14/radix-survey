@@ -6,8 +6,8 @@ import TextArea from 'antd/lib/input/TextArea';
 const InputGroup = Input.Group;
 const Option = Select.Option;
 
-function Question({ question, answers, removeQuestion, editQuestion, addAnswer, removeAnswer, editAnswer }) {
-  const { id, questionText, questionType } = question;
+function Question({ question, removeQuestion, editQuestion, addAnswerChoice, removeAnswerChoice, editAnswerChoiceProperty }) {
+  const { id: questionId, questionText, questionType, answerChoices } = question;
   
   return (
     <Form.Item>
@@ -16,54 +16,54 @@ function Question({ question, answers, removeQuestion, editQuestion, addAnswer, 
         <Input placeholder="Question" required={true}
               name="questionText"
               value={questionText}
-              onChange={(event) => editQuestion(id, event.target.name, event.target.value)}
+              onChange={(event) => editQuestion(questionId, event.target.name, event.target.value)}
               style={{ width: '74%' }}/>
         <Select defaultValue="radio"
                 name="questionType"
                 value={questionType}
-                onChange={(type) => editQuestion(id, 'questionType', type)}
+                onChange={(type) => editQuestion(questionId, 'questionType', type)}
                 style={{ width: '20%' }}>
           <Option value="radio">Radio</Option>
           <Option value="checkbox">Checkbox</Option>
-          <Option value="short_text">Short text</Option>
-          <Option value="long_text">Long text</Option>
+          <Option value="shortText">Short text</Option>
+          <Option value="longText">Long text</Option>
         </Select>
         <Button shape="circle" icon="close" style={{}}
-                onClick={() => removeQuestion(id)} />
+                onClick={() => removeQuestion(questionId)} />
 
       </InputGroup>
 
-      {questionType !== 'text' && questionType !== 'long_text'
-      && answers.items.filter(a => answers[a].questionId === question.id).map((answerId, i) => {
-        const answer = answers[answerId];
+      {questionType !== 'shortText' && questionType !== 'longText'
+      && answerChoices.items.map((answerId, index) => {
+        const answerChoice = answerChoices[answerId];
 
         if (questionType === 'radio')
           return (
-            <Radio key={answer.id}
+            <Radio key={answerChoice.id}
                    disabled={true}
                    style={{ display: 'table' }}>
-              <Input placeholder={'Answer ' + (i + 1)}
+              <Input placeholder={'Answer ' + (index + 1)}
                      name="answerText"
-                     value={answer.answerText}
-                     onChange={e => editAnswer(answer.id, e.target.name, e.target.value)}
+                     value={answerChoice.answerText}
+                     onChange={e => editAnswerChoiceProperty(questionId, answerChoice.id, e.target.name, e.target.value)}
                      />
               <Button shape="circle" icon="close" style={{ border: 'none' }}
-                      onClick={() => removeAnswer(answer.id)} />
+                      onClick={() => removeAnswerChoice(questionId, answerChoice.id)} />
             </Radio>
           );
         else if (questionType === 'checkbox') {
           return (
-            <Checkbox key={answer.id}
+            <Checkbox key={answerChoice.id}
                       disabled={true}
                       style={{ display: 'table', width: '60%', marginLeft: 0 }}>
-              <Input placeholder={'Answer ' + (i + 1)}
+              <Input placeholder={'Answer ' + (index + 1)}
                      style={{ width: '80%' }}
                      name="answerText"
-                     value={answer.answerText}
-                     onChange={e => editAnswer(answer.id, e.target.name, e.target.value)}
+                     value={answerChoice.answerText}
+                     onChange={e => editAnswerChoiceProperty(questionId, answerChoice.id, e.target.name, e.target.value)}
                      />
               <Button shape="circle" icon="close" style={{ border: 'none' }}
-                      onClick={() => removeAnswer(answer.id)} />
+                      onClick={() => removeAnswerChoice(questionId, answerChoice.id)} />
             </Checkbox>
           );
 
@@ -73,15 +73,15 @@ function Question({ question, answers, removeQuestion, editQuestion, addAnswer, 
 
       <br/>
 
-      {questionType === 'short_text' &&
+      {questionType === 'shortText' &&
         <Input placeholder="User's answer" disabled/>
       }
-      {questionType === 'long_text' &&
+      {questionType === 'longText' &&
         <TextArea placeholder="User's answer" disabled autosize={{ minRows: 2, maxRows: 6 }}/>
       }
 
-      {questionType !== 'short_text' && questionType !== 'long_text' &&
-          <Button icon="plus" onClick={() => addAnswer(question.id)}>Add answer</Button>
+      {questionType !== 'shortText' && questionType !== 'longText' &&
+        <Button icon="plus" onClick={() => addAnswerChoice(questionId)}>Add answer</Button>
       }
     
 
@@ -92,18 +92,17 @@ function Question({ question, answers, removeQuestion, editQuestion, addAnswer, 
 
 const mapStateToProps = (state, ownProps) => {
   return {
-    question: state.newSurvey.questions[ownProps.question.id],
-    answers: state.newSurvey.answers
+    question: state.newSurvey.questions[ownProps.question.id]
   };
 }
 
 const mapDispatcherToProps = (dispatcher) => ({
-  addAnswer: (questionId) =>
-    dispatcher(NewSurveyActions.addAnswer(questionId)),
-  removeAnswer: (answerId) =>
-    dispatcher(NewSurveyActions.removeAnswer(answerId)),
-  editAnswer: (answerId, property, value) =>
-    dispatcher(NewSurveyActions.editAnswerProperty(answerId, property, value))
+  addAnswerChoice: (questionId) =>
+    dispatcher(NewSurveyActions.addAnswerChoice(questionId)),
+  removeAnswerChoice: (questionId, answerId) =>
+    dispatcher(NewSurveyActions.removeAnswerChoice(questionId, answerId)),
+  editAnswerChoiceProperty: (questionId, answerId, property, value) =>
+    dispatcher(NewSurveyActions.editAnswerChoiceProperty(questionId, answerId, property, value))
 });
 
 export default connect(

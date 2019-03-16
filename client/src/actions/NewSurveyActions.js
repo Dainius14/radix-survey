@@ -1,5 +1,4 @@
-import fetch from 'cross-fetch';
-import { checkIfResponseOk } from '../utilities';
+import { request } from '../utilities';
 
 export const EDIT_SURVEY_PROPERTY = 'CHANGE_NEW_SURVEY_INPUT_VALUE';
 export const editSurveyProperty = (property, value) => ({
@@ -30,22 +29,24 @@ export const editQuestionProperty = (questionId, property, value) => ({
 });
 
 let answerId = 0;
-export const ADD_ANSWER = 'ADD_ANSWER';
-export const addAnswer = (questionId) => ({
-  type: ADD_ANSWER,
+export const ADD_ANSWER_CHOICE = 'ADD_ANSWER_CHOICE';
+export const addAnswerChoice = (questionId) => ({
+  type: ADD_ANSWER_CHOICE,
   answerId: answerId++,
   questionId
 });
 
-export const REMOVE_ANSWER = 'REMOVE_ANSWER';
-export const removeAnswer = (answerId) => ({
-  type: REMOVE_ANSWER,
+export const REMOVE_ANSWER_CHOICE = 'REMOVE_ANSWER_CHOICE';
+export const removeAnswerChoice = (questionId, answerId) => ({
+  type: REMOVE_ANSWER_CHOICE,
+  questionId,
   answerId
 });
 
-export const EDIT_ANSWER_PROPERTY = 'EDIT_ANSWER_PROPERTY';
-export const editAnswerProperty = (answerId, property, value) => ({
-  type: EDIT_ANSWER_PROPERTY,
+export const EDIT_ANSWER_CHOICE_PROPERTY = 'EDIT_ANSWER_CHOICE_PROPERTY';
+export const editAnswerChoiceProperty = (questionId, answerId, property, value) => ({
+  type: EDIT_ANSWER_CHOICE_PROPERTY,
+  questionId,
   answerId,
   property,
   value
@@ -72,26 +73,22 @@ export const postSurveyError = (error) => ({
 
 export function postSurvey(survey) {
   return dispatch => {
+    console.debug('postSurvey() request', survey);
     dispatch(postSurveyRequest());
     
-    return fetch('http://localhost:8080/api/create-survey', {
+    return request('http://localhost:8080/api/create-survey', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json'
         },
         body: JSON.stringify(survey)
       })
-      .then(checkIfResponseOk)
       .then(response => {
-        console.debug('postSurvey() response:', response);
-        return response.json();
-      })
-      .then(responseJson => {
-        console.debug('postSurvey() json:', responseJson);
-        dispatch(postSurveySuccess(responseJson));
+        console.debug('postSurvey() success', response);
+        dispatch(postSurveySuccess(response));
       })
       .catch(error => {
-        console.error('postSurvey() error:', error);
+        console.error('postSurvey() error', error);
         dispatch(postSurveyError(error));
       });
   }

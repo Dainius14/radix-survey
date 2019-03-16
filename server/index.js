@@ -5,24 +5,30 @@ const radix = require('radixdlt');
 const Datastore = require('nedb');
 const utils = require('./utils');
 const Ajv = require('ajv');
+const newSurveySchema = require('./newSurveySchema');
 const ajv = Ajv({ allErrors: true });
 const rxOperators = require('rxjs/operators');
 const rxFilter = rxOperators.filter;
 const rxMap = rxOperators.map;
 
-const APP_ID = 'dd-testing-2';
+const APP_ID = 'dd-testing-3';
 
 const server = restify.createServer({});
 
+
+// Skip some things in production
 if (process.env.NODE_ENV != 'production') {
-  const corsMiddleware  = require('restify-cors-middleware')
+  const corsMiddleware  = require('restify-cors-middleware');
   const cors = corsMiddleware({ allowHeaders: ['Content-Type'] });
-  // server.use(cors({ allowHeaders: ['Content-Type'] }));
-  server.pre(cors.preflight)
-  server.use(cors.actual)
+  server.pre(cors.preflight);
+  server.use(cors.actual);
+
+  // For testing purposes add some delay to response
+  server.use((req, res, next) => {
+    setTimeout(() => next(), 1000);
+  });
 }
 
-// console.log(restify)
 server.use(restify.plugins.bodyParser());
 server.use(restify.plugins.fullResponse());
 server.use((req, res, next) => {
@@ -34,13 +40,9 @@ server.use((req, res, next) => {
   return next();
 })
 
-// For testing purposes add some delay for response
-server.use((req, res, next) => {
-  setTimeout(() => next(), 1000);
-});
 
 // Create Radix identity
-const db = new Datastore({ filename: './cache.db', autoload: true });
+let db = new Datastore({ filename: './cache.db', autoload: true });
 let identity;
 radix.radixUniverse.bootstrap(radix.RadixUniverse.ALPHANET);
 fs.readFile('file.key', function(error, key) {
@@ -158,11 +160,34 @@ server.post('/api/create-survey', (req, res, next) => {
       new errors.BadRequestError(JSON.stringify(testSchema.errors))
     );
   }
-  
+
   // Request valid
-  const id = utils.random();
-  const data = Object.assign({}, req.body, { id });
-  const jsonData = JSON.stringify(data);
+
+  // Clean up survey data:
+  // Questions will be transformed to array which is already sorted the way it needs to be
+  // Ids are not neccessary anymore, since quesiton position in the array will be a good
+  // identifier.
+  // Same goes for answer choices
+  const newQuestions = req.body.questions.items.map((questionId) => {
+    const question = Object.assign({}, req.body.questions[questionId]);
+    delete question.id;
+
+    if (question.answerChoices) {
+      question.answerChoices = question.answerChoices.items.map((answerId) => {
+        const answer = Object.assign({}, question.answerChoices[answerId]);
+        delete answer.id;
+        return answer;
+      });
+    }
+    
+    return question;
+  });
+
+  const cleanSurvey = Object.assign({}, req.body, { questions: newQuestions });
+  
+  // res.send(cleanSurvey);
+  // return next();
+  const jsonData = JSON.stringify(cleanSurvey);
 
   radix.RadixTransactionBuilder
     .createPayloadAtom([identity.account], APP_ID, jsonData)
@@ -170,53 +195,19 @@ server.post('/api/create-survey', (req, res, next) => {
     .subscribe({
         next: item => {},
         complete:() => {
+          console.log('Survey stored successfully', { id })
           res.send({ id });
-          next();
+          return next();
         },
         error: error => {
-          return next(
-            new errors.InternalServerError(error)
-          );
+          console.error('Error storing survey', error);
+          return next(new errors.InternalServerError(error));
         }
   });
 });
 
-const schema = {
-  type: 'object',
-  additionalProperties: false,
-  required: ['title', 'shortDescription', 'questions', 'answers'],
-  properties: {
-    title: {
-      type: 'string',
-      minLength: 0,
-      maxLength: 50
-    },
-    shortDescription: {
-      type: 'string',
-      minLength: 0,
-      maxLength: 200
-    },
-    questions: {
-      type: 'object',
-      required: ['items'],
-      properties: {
-        items: {
-          type: 'array'
-        }
-      }
-    },
-    answers: {
-      type: 'object',
-      required: ['items'],
-      properties: {
-        items: {
-          type: 'array'
-        }
-      }
-    },
-  }
-};
-const testSchema = ajv.compile(schema);
+
+const testSchema = ajv.compile(newSurveySchema);
 
 
 server.listen(8080, function() {

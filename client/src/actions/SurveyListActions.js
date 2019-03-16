@@ -1,5 +1,4 @@
-import fetch from 'cross-fetch';
-import { checkIfResponseOk } from '../utilities';
+import { request } from '../utilities';
 
 export const GET_SURVEYS_REQUEST = 'GET_SURVEYS_REQUEST';
 export function getSurveysRequest() {
@@ -42,21 +41,17 @@ export const getSurveyError = (error) => ({
 
 export function getSurveys() {
   return dispatch => {
+    console.debug('getSurveys() request');
     dispatch(getSurveysRequest());
-    return fetch('http://localhost:8080/api/surveys', {
+    return request('http://localhost:8080/api/surveys', {
         method: 'GET'
       })
-      .then(checkIfResponseOk)
       .then(response => {
-        console.debug('getSurveys() response:', response);
-        return response.json();
-      })
-      .then(responseJson => {
-        console.debug('getSurveys() json:', responseJson);
-        dispatch(getSurveysSuccess(responseJson));
+        console.debug('getSurveys() success', response);
+        dispatch(getSurveysSuccess(response));
       })
       .catch(error => {
-        console.error('getSurveys() error:', error);
+        console.error('getSurveys() error', error);
         dispatch(getSurveysError(error));
       });
   }
@@ -66,22 +61,18 @@ export function getSurveys() {
 
 export function getSurvey(surveyId) {
   return dispatch => {
+    console.debug('getSurvey() request', surveyId);
     dispatch(getSurveyRequest());
     
-    return fetch(`http://localhost:8080/api/surveys/${surveyId}`, {
+    return request(`http://localhost:8080/api/surveys/${surveyId}`, {
         method: 'GET'
       })
-      .then(checkIfResponseOk)
       .then(response => {
-        console.debug('getSurvey() response:', response);
-        return response.json();
-      })
-      .then(responseJson => {
-        console.debug('getSurveys() json:', responseJson);
-        dispatch(getSurveySuccess(responseJson));
+        console.debug('getSurvey() success', response);
+        dispatch(getSurveySuccess(response));
       })
       .catch(error => {
-        console.error('getSurvey() error:', error);
+        console.error('getSurvey() error', error);
         dispatch(getSurveyError(error));
       });
   }

@@ -7,9 +7,6 @@ const initialState = {
   shortDescription: '',
   questions: {
     items: []
-  },
-  answers: {
-    items: []
   }
 };
 
@@ -28,6 +25,10 @@ const newSurvey = (state = initialState, action) => {
         id: questionId,
         questionText: '',
         questionType: 'radio',
+        required: true,
+        answerChoices: {
+          items: []
+        }
       };
 
       return update(state, {
@@ -62,41 +63,52 @@ const newSurvey = (state = initialState, action) => {
     }
 
 
-    case Actions.ADD_ANSWER: {
-      const { answerId, questionId } = action;
-      const answer = {
+    case Actions.ADD_ANSWER_CHOICE: {
+      const { questionId, answerId } = action;
+      const answerChoice = {
         id: answerId,
-        questionId,
         answerText: ''
       };
 
       return update(state, {
-        answers: {
-          $merge: {[answerId]: answer},
-          items: {$push: [answerId]}
+        questions: {
+          [questionId]: {
+            answerChoices: {
+              $merge: {[answerId]: answerChoice},
+              items: {$push: [answerId]}
+            }
+          }
         }
       });
     }
 
-    case Actions.REMOVE_ANSWER: {
-      const { answerId } = action;
-      const answerIndex = state.answers.items.indexOf(answerId);
+    case Actions.REMOVE_ANSWER_CHOICE: {
+      const { questionId, answerId } = action;
+      const answerIndex = state.questions[questionId].answerChoices.items.indexOf(answerId);
 
       return update(state, {
-        answers: {
-          $unset: [answerId],
-          items: {$splice: [[answerIndex, 1]]}
+        questions: {
+          [questionId]: {
+            answerChoices: {
+              $unset: [answerId],
+              items: {$splice: [[answerIndex, 1]]}
+            }
+          }
         }
       });
     }
 
-    case Actions.EDIT_ANSWER_PROPERTY: {
-      const { answerId, property, value } = action;
+    case Actions.EDIT_ANSWER_CHOICE_PROPERTY: {
+      const { questionId, answerId, property, value } = action;
       
       return update(state, {
-        answers: {
-          [answerId]: {
-            [property]: {$set: value}
+        questions: {
+          [questionId]: {
+            answerChoices: {
+              [answerId]: {
+                [property]: {$set: value}
+              }
+            }
           }
         }
       });
