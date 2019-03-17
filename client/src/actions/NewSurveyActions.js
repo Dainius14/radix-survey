@@ -20,7 +20,7 @@ export const removeQuestion = (questionId) => ({
   questionId
 });
 
-export const EDIT_QUESTION_PROPERTY = 'CHANGE_NEW_SURVEY_QUESTION_PROPERTY';
+export const EDIT_QUESTION_PROPERTY = 'CHANGE_QUESTION_PROPERTY';
 export const editQuestionProperty = (questionId, property, value) => ({
   type: EDIT_QUESTION_PROPERTY,
   questionId,

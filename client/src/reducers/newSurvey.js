@@ -3,19 +3,28 @@ import update from 'immutability-helper';
 
 
 const initialState = {
-  title: '',
-  shortDescription: '',
-  questions: {
-    items: []
+  error: null,
+  isPosting: false,
+  data: {
+    title: '',
+    shortDescription: '',
+    questions: {
+      items: []
+    }
   }
 };
+
+const removeAnswerChoices = ['shortText', 'longText'];
+const addAnswerChoices = ['radio', 'checkbox'];
 
 const newSurvey = (state = initialState, action) => { 
   switch (action.type) {
     case Actions.EDIT_SURVEY_PROPERTY: {
       const { property, value } = action;
       return update(state, {
-        [property]: {$set: value}
+        data: {
+          [property]: {$set: value}
+        }
       });
     }
 
@@ -32,31 +41,68 @@ const newSurvey = (state = initialState, action) => {
       };
 
       return update(state, {
-        questions: {
-          $merge: {[questionId]: newQuestion},
-          items: {$push: [questionId]}
+        data: {
+          questions: {
+            $merge: {[questionId]: newQuestion},
+            items: {$push: [questionId]}
+          }
         }
       });
     }
 
     case Actions.REMOVE_QUESTION: {
       const { questionId } = action;
-      const questionIndex = state.questions.items.indexOf(questionId);
+      const questionIndex = state.data.questions.items.indexOf(questionId);
       return update(state, {
-        questions: {
-          $unset: [questionId],
-          items: {$splice: [[questionIndex, 1]]}
+        data: {
+          questions: {
+            $unset: [questionId],
+            items: {$splice: [[questionIndex, 1]]}
+          }
         }
       });
     }
 
     case Actions.EDIT_QUESTION_PROPERTY: {
       const { questionId, property, value } = action;
+
+      const prevValue = state.data.questions[questionId].questionType;
+
+      
+      // Changing type must not leave any trace of answer choices
+      if (property === 'questionType') {
+        if (removeAnswerChoices.includes(prevValue) && addAnswerChoices.includes(value)) {
+          return update(state, {
+            data: {
+              questions: {
+                [questionId]: {
+                  [property]: {$set: value},
+                  $merge: { answerChoices: { items: [] } }
+                }
+              }
+            }
+          });
+        }
+        else if (addAnswerChoices.includes(prevValue) && removeAnswerChoices.includes(value)) {
+          return update(state, {
+            data: {
+              questions: {
+                [questionId]: {
+                  [property]: {$set: value},
+                  $unset: ['answerChoices']
+                }
+              }
+            }
+          });
+        }
+      }
       
       return update(state, {
-        questions: {
-          [questionId]: {
-            [property]: {$set: value}
+        data: {
+          questions: {
+            [questionId]: {
+              [property]: {$set: value}
+            }
           }
         }
       });
@@ -71,11 +117,13 @@ const newSurvey = (state = initialState, action) => {
       };
 
       return update(state, {
-        questions: {
-          [questionId]: {
-            answerChoices: {
-              $merge: {[answerId]: answerChoice},
-              items: {$push: [answerId]}
+        data: {
+          questions: {
+            [questionId]: {
+              answerChoices: {
+                $merge: {[answerId]: answerChoice},
+                items: {$push: [answerId]}
+              }
             }
           }
         }
@@ -84,14 +132,16 @@ const newSurvey = (state = initialState, action) => {
 
     case Actions.REMOVE_ANSWER_CHOICE: {
       const { questionId, answerId } = action;
-      const answerIndex = state.questions[questionId].answerChoices.items.indexOf(answerId);
+      const answerIndex = state.data.questions[questionId].answerChoices.items.indexOf(answerId);
 
       return update(state, {
-        questions: {
-          [questionId]: {
-            answerChoices: {
-              $unset: [answerId],
-              items: {$splice: [[answerIndex, 1]]}
+        data: {
+          questions: {
+            [questionId]: {
+              answerChoices: {
+                $unset: [answerId],
+                items: {$splice: [[answerIndex, 1]]}
+              }
             }
           }
         }
@@ -102,11 +152,13 @@ const newSurvey = (state = initialState, action) => {
       const { questionId, answerId, property, value } = action;
       
       return update(state, {
-        questions: {
-          [questionId]: {
-            answerChoices: {
-              [answerId]: {
-                [property]: {$set: value}
+        data: {
+          questions: {
+            [questionId]: {
+              answerChoices: {
+                [answerId]: {
+                  [property]: {$set: value}
+                }
               }
             }
           }
@@ -115,15 +167,24 @@ const newSurvey = (state = initialState, action) => {
     }
 
     case Actions.POST_SURVEY_REQUEST: {
-      return state;
+      return update(state, {
+        isPosting: {$set: true},
+        error: {$set: null}
+      });
     }
 
     case Actions.POST_SURVEY_SUCCESS: {
-      return state;
+      return update(state, {
+        isPosting: {$set: false},
+        error: {$set: null}
+      });
     }
     
     case Actions.POST_SURVEY_ERROR: {
-      return state;
+      return update(state, {
+        isPosting: {$set: false},
+        error: {$set: action.error}
+      });
     }
 
 

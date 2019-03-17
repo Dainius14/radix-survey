@@ -53,18 +53,21 @@ function Question({ question, removeQuestion, editQuestion, addAnswerChoice, rem
           );
         else if (questionType === 'checkbox') {
           return (
-            <Checkbox key={answerChoice.id}
-                      disabled={true}
-                      style={{ display: 'table', width: '60%', marginLeft: 0 }}>
-              <Input placeholder={'Answer ' + (index + 1)}
-                     style={{ width: '80%' }}
-                     name="answerText"
-                     value={answerChoice.answerText}
-                     onChange={e => editAnswerChoiceProperty(questionId, answerChoice.id, e.target.name, e.target.value)}
-                     />
-              <Button shape="circle" icon="close" style={{ border: 'none' }}
-                      onClick={() => removeAnswerChoice(questionId, answerChoice.id)} />
-            </Checkbox>
+            <>
+              <Checkbox key={answerChoice.id}
+                        disabled={true}
+                        style={{ width: '80%' }}>
+                <Input placeholder={'Answer ' + (index + 1)}
+                      style={{ width: '80%' }}
+                      name="answerText"
+                      value={answerChoice.answerText}
+                      onChange={e => editAnswerChoiceProperty(questionId, answerChoice.id, e.target.name, e.target.value)}
+                      />
+                <Button shape="circle" icon="close" style={{ border: 'none' }}
+                        onClick={() => removeAnswerChoice(questionId, answerChoice.id)} />
+              </Checkbox>
+              <br/>
+            </>
           );
 
         }
@@ -92,7 +95,7 @@ function Question({ question, removeQuestion, editQuestion, addAnswerChoice, rem
 
 const mapStateToProps = (state, ownProps) => {
   return {
-    question: state.newSurvey.questions[ownProps.question.id]
+    question: state.newSurvey.data.questions[ownProps.question.id]
   };
 }
 

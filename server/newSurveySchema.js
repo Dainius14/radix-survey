@@ -24,7 +24,7 @@ module.exports = {
     "shortDescription": {
       "type": "string",
       "minLength": 0,
-      "maxLength": 200
+      "maxLength": 1000
     },
 
     // Questions
@@ -36,6 +36,7 @@ module.exports = {
       "properties": {
         "items": {
           "type": "array",
+          "minItems": 1,
           "items": {
             "type": "integer"
           }
@@ -72,6 +73,7 @@ module.exports = {
           {
           	"properties": {
               "questionType": { "enum": ["shortText", "longText"] },
+              "answerChoices": { "not": {} }
           	}
           }
         ],

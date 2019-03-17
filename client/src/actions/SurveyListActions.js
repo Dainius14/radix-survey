@@ -29,9 +29,9 @@ export const getSurveyRequest = () => ({
 });
 
 export const GET_SURVEY_SUCCESS = 'GET_SURVEY_SUCCESS';
-export const getSurveySuccess = (response) => ({
+export const getSurveySuccess = (data) => ({
   type: GET_SURVEY_SUCCESS,
-  response
+  data
 });
 export const GET_SURVEY_ERROR = 'GET_SURVEY_ERROR';
 export const getSurveyError = (error) => ({

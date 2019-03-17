@@ -18,7 +18,7 @@ function NewSurveyQuestionList({ questions, addQuestion, removeQuestion, editQue
 
 const mapStateToProps = (state) => {
   return {
-    questions: state.newSurvey.questions
+    questions: state.newSurvey.data.questions
   }
 };
 

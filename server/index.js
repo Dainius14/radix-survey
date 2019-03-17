@@ -81,7 +81,9 @@ fs.readFile('file.key', function(error, key) {
           // Reload database, because it doesn't reread the new file
           db.loadDatabase();
 
-          console.log(`[${utils.timestampToHumanISODate(data.timestamp)}]: ${data.payload}`);
+          console.log(`[${utils.timestampToHumanISODate(data.timestamp)}]: New survey '${JSON.parse(data.payload).title}'. ID: ${data.hid}`);
+
+          latestId = data.hid;
       },
       error: error => console.error('Error observing application data.', error)
   });
@@ -152,6 +154,8 @@ server.get('/api/surveys/:survey_id', (req, res, next) => {
   });
 });
 
+
+let latestId = null;
 server.post('/api/create-survey', (req, res, next) => {
   const isValid = testSchema(req.body);
   if (!isValid) {
@@ -194,9 +198,9 @@ server.post('/api/create-survey', (req, res, next) => {
     .signAndSubmit(identity)
     .subscribe({
         next: item => {},
-        complete:() => {
-          console.log('Survey stored successfully', { id })
-          res.send({ id });
+        complete: () => {
+          // NEED TO PROPERLY DEAL WITH THIS STUFF HERE
+          res.send({ id: latestId });
           return next();
         },
         error: error => {

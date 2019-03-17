@@ -1,8 +1,10 @@
 import React from 'react';
 import { Link } from 'react-router-dom'
 import { connect } from 'react-redux';
-import { Spin, List } from 'antd';
+import { List, Typography } from 'antd';
 import * as SurveyListActions from '../actions/SurveyListActions';
+import '../styles/MultilineCode.css';
+const { Text } = Typography;
 
 
 class SurveyList extends React.Component {
@@ -18,16 +20,9 @@ class SurveyList extends React.Component {
   render() {
     const { surveys } = this.props;
 
-    if (surveys.isLoading) {
-      return (
-        <div style={{ marginTop: 10 }}>
-          <Spin spinning={surveys.isLoading}/>
-        </div>
-      );
-    }
     if (surveys.error) {
       return (
-        <div style={{ marginTop: 10 }}>{surveys.error.toString()}</div>
+        <Text code className="multiline-code">{JSON.stringify(surveys.error, null, 4)}</Text>
       );
     }
 
@@ -35,11 +30,12 @@ class SurveyList extends React.Component {
     return (
       <>
         <List dataSource={surveys.data.items}
+              loading={surveys.isLoading}
               renderItem={id => {
                 const survey = surveys.data[id];
                 return (
                   <List.Item actions={[
-                      <span>{survey.questions.items.length} questions</span>,
+                      <span>{survey.questions.length} questions</span>,
                       <Link to={`/surveys/${survey.id}`}>Open</Link>
                     ]}>
                     <List.Item.Meta

@@ -1,0 +1,4 @@
+.multiline-code > code {
+  white-space: pre;
+  display: block;
+}
