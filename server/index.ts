@@ -1,24 +1,22 @@
-const restify = require('restify');
-const errors = require('restify-errors');
-const fs = require('fs');
-const radix = require('radixdlt');
-const Datastore = require('nedb');
-const utils = require('./utils');
-const Ajv = require('ajv');
-const newSurveySchema = require('./newSurveySchema');
-const ajv = Ajv({ allErrors: true });
-const rxOperators = require('rxjs/operators');
-const rxFilter = rxOperators.filter;
-const rxMap = rxOperators.map;
+import restify from 'restify';
+import errors from 'restify-errors';
+import { radixUniverse, RadixUniverse, RadixIdentity, RadixLogger, RadixKeyStore, RadixSimpleIdentity, RadixAtom, RadixTransactionBuilder, RadixNEDBAtomCache } from 'radixdlt';
+import fs from 'fs';
+import Datastore from 'nedb';
+import Ajv from 'ajv';
+import { filter as rxFilter } from 'rxjs/operators';
 
-const APP_ID = 'dd-testing-3';
+import env from './.env.json';
+import key from './key.json';
+import { newSurveySchema } from './newSurveySchema';
+import { timestampToHumanISODate } from './utils';
 
-const server = restify.createServer({});
 
+const server: restify.Server = restify.createServer();
 
 // Skip some things in production
 if (process.env.NODE_ENV != 'production') {
-  const corsMiddleware  = require('restify-cors-middleware');
+  const corsMiddleware = require('restify-cors-middleware');
   const cors = corsMiddleware({ allowHeaders: ['Content-Type'] });
   server.pre(cors.preflight);
   server.use(cors.actual);
@@ -29,8 +27,10 @@ if (process.env.NODE_ENV != 'production') {
   });
 }
 
+// Apply middleware
 server.use(restify.plugins.bodyParser());
 server.use(restify.plugins.fullResponse());
+// For POST methods, require application/json header
 server.use((req, res, next) => {
   if (req.method === 'POST' && !req.is('application/json')) {
     return next(
@@ -41,58 +41,58 @@ server.use((req, res, next) => {
 })
 
 
-// Create Radix identity
-let db = new Datastore({ filename: './cache.db', autoload: true });
-let identity;
-radix.radixUniverse.bootstrap(radix.RadixUniverse.ALPHANET);
-fs.readFile('file.key', function(error, key) {
-  if (error) {
-      console.error('Error reading file.', error);
-  }
-  radix.RadixLogger.setLevel('warn'); // Available levels: trace/debug/info/warn/error
-  const identityManager = new radix.RadixIdentityManager();
-  const keypair = radix.RadixKeyPair.fromPrivate(key);
-  identity = identityManager.addSimpleIdentity(keypair);
-  identity.account.enableCache(new radix.RadixNEDBAtomCache('./cache.db'));
+// Open cached database
+const db = new Datastore({ filename: './cache.db', autoload: true });
 
-  identity.account.openNodeConnection();
+// Setup Radix
+radixUniverse.bootstrap(RadixUniverse.ALPHANET);
+RadixLogger.setLevel('warn'); // Available levels: trace/debug/info/warn/error
+let identity: RadixSimpleIdentity;
+
+RadixKeyStore.decryptKey(key, env.keyPassword)
+  .then((keyPair) => {
+    console.log('Private key successfuly decrypted');
+    identity = new RadixSimpleIdentity(keyPair);
+
+    const account = identity.account;
+    account.enableCache(new RadixNEDBAtomCache('./cache.db'));
+    account.openNodeConnection();
+    console.log('Address:', account.getAddress());
+
+    // Subscribe for all previous transactions as well as new ones
+    account.transferSystem.getAllTransactions().subscribe(transactionUpdate => {
+      console.log('Transaction update', transactionUpdate)
+    });
 
 
-  // Subscribe to all old and new data
-  // identity.account.dataSystem
-  //   .getApplicationData(APP_ID)
-  
-  // Subscribe to new data
-  const tsNow = new Date().getTime();
-  identity.account.dataSystem.applicationData.get(APP_ID);
-  identity.account.dataSystem.applicationDataSubject
-    .pipe(
-      rxFilter(item => {
-        // Return only items which are not older than 10 seconds
-        if (item.data.timestamp > tsNow - (10 * 1000)) {
-          return item;
-        }
-      })
-    )
-    .subscribe({
-      next: item => {
+    // Subscribe to new data
+    const tsNow = new Date().getTime();
+    account.dataSystem.applicationDataSubject
+      .pipe(
+        rxFilter(item => {
+          // Return only items which are not older than 10 seconds
+          return item.data.timestamp > tsNow - (10 * 1000);
+        })
+      )
+      .subscribe({
+        next: item => {
           const data = item.data;
-          
+
           // Reload database, because it doesn't reread the new file
           db.loadDatabase();
 
-          console.log(`[${utils.timestampToHumanISODate(data.timestamp)}]: New survey '${JSON.parse(data.payload).title}'. ID: ${data.hid}`);
+          console.log(`[${timestampToHumanISODate(data.timestamp)}]: New survey '${JSON.parse(data.payload).title}'. ID: ${data.hid}`);
 
           latestId = data.hid;
-      },
-      error: error => console.error('Error observing application data.', error)
-  });
+        },
+        error: error => console.error('Error observing application data.', error)
+      });
 });
 
 
 server.get('/api/surveys', (req, res, next) => {
-  db.find({ applicationId: APP_ID })
-    .exec((error, docs) => {
+  db.find({ applicationId: env.appId },
+    (error: Error, docs: RadixAtom[]) => {
       if (error) {
         return next(new errors.InternalServerError(error))
       }
@@ -105,11 +105,12 @@ server.get('/api/surveys', (req, res, next) => {
       // const takeNDocs = sortedDocs.slice(0, 5);
 
       // Prepare data
-      const data = sortedDocs.reduce((acc, x) => {
+      const acc = {};
+      const data = sortedDocs.reduce(( acc: any, x: RadixAtom) => {
         let payload = x.payload;
         try {
           payload = JSON.parse(payload);
-        } catch (e) {}
+        } catch (e) { }
 
         if (payload.title) {
           acc[x._id] = payload;
@@ -127,12 +128,12 @@ server.get('/api/surveys', (req, res, next) => {
       }, { items: [] });
       res.send(data);
       return next();
-  });
+    });
 });
 
 server.get('/api/surveys/:survey_id', (req, res, next) => {
-  db.findOne({ applicationId: APP_ID, _id: req.params.survey_id })
-    .exec((error, doc) => {
+  db.findOne({ applicationId: env.appId, _id: req.params.survey_id },
+    (error: Error, doc: RadixAtom) => {
       if (error) {
         return next(new errors.InternalServerError(error))
       }
@@ -145,17 +146,17 @@ server.get('/api/surveys/:survey_id', (req, res, next) => {
       let payload = doc.payload;
       try {
         payload = JSON.parse(payload);
-      } catch (e) {}
+      } catch (e) { }
 
       payload.id = doc._id;
 
       res.send(payload);
       return next();
-  });
+    });
 });
 
 
-let latestId = null;
+let latestId: string = '';
 server.post('/api/create-survey', (req, res, next) => {
   const isValid = testSchema(req.body);
   if (!isValid) {
@@ -172,48 +173,50 @@ server.post('/api/create-survey', (req, res, next) => {
   // Ids are not neccessary anymore, since quesiton position in the array will be a good
   // identifier.
   // Same goes for answer choices
-  const newQuestions = req.body.questions.items.map((questionId) => {
+  const newQuestions = req.body.questions.items.map((questionId: number) => {
     const question = Object.assign({}, req.body.questions[questionId]);
     delete question.id;
 
     if (question.answerChoices) {
-      question.answerChoices = question.answerChoices.items.map((answerId) => {
+      question.answerChoices = question.answerChoices.items.map((answerId: number) => {
         const answer = Object.assign({}, question.answerChoices[answerId]);
         delete answer.id;
         return answer;
       });
     }
-    
+
     return question;
   });
 
   const cleanSurvey = Object.assign({}, req.body, { questions: newQuestions });
-  
+
   // res.send(cleanSurvey);
   // return next();
   const jsonData = JSON.stringify(cleanSurvey);
 
-  radix.RadixTransactionBuilder
-    .createPayloadAtom([identity.account], APP_ID, jsonData)
+  RadixTransactionBuilder
+    .createPayloadAtom([identity.account], env.appId, jsonData)
     .signAndSubmit(identity)
     .subscribe({
-        next: item => {},
-        complete: () => {
-          // NEED TO PROPERLY DEAL WITH THIS STUFF HERE
-          res.send({ id: latestId });
-          return next();
-        },
-        error: error => {
-          console.error('Error storing survey', error);
-          return next(new errors.InternalServerError(error));
-        }
-  });
+      next: item => { },
+      complete: () => {
+        // NEED TO PROPERLY DEAL WITH THIS STUFF HERE
+        res.send({ id: latestId });
+        return next();
+      },
+      error: error => {
+        console.error('Error storing survey', error);
+        return next(new errors.InternalServerError(error));
+      }
+    });
 });
 
 
+const ajv = Ajv({ allErrors: true });
 const testSchema = ajv.compile(newSurveySchema);
 
 
-server.listen(8080, function() {
+
+server.listen(8080, function () {
   console.log('%s listening at %s', server.name, server.url);
 });

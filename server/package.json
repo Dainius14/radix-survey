@@ -5,7 +5,8 @@
   "main": "index.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "start": "nodemon index.js"
+    "start": "nodemon",
+    "tsc": "tsc"
   },
   "author": "Dainius Dauksevicius",
   "license": "MIT",
@@ -18,5 +19,11 @@
     "restify-errors": "^7.0",
     "rxjs": "^6.4.0"
   },
-  "devDependencies": {}
+  "devDependencies": {
+    "@types/nedb": "^1.8.7",
+    "@types/restify": "^7.2.9",
+    "@types/restify-errors": "^4.3.3",
+    "ts-node": "^8.0.3",
+    "typescript": "^3.3.4000"
+  }
 }

@@ -6,7 +6,7 @@
 // Required properties are defined in "required" array for each entity.
 // Property types and other attributes for it are defined in "properties" for each property
 
-module.exports = {
+export const newSurveySchema = {
   // Survey info
   "type": "object",
   "additionalProperties": false,
