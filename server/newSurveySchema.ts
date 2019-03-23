@@ -11,11 +11,18 @@ export const newSurveySchema = {
   "type": "object",
   "additionalProperties": false,
   "required": [
+    "radixAddress",
     "title",
     "shortDescription",
     "questions"
   ],
   "properties": {
+    "radixAddress": {
+      "type": "string",
+      "minLength": 51,
+      "maxLength": 51,
+
+    },
     "title": {
       "type": "string",
       "minLength": 0,

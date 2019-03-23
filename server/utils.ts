@@ -9,3 +9,7 @@ export function timestampToHumanISODate(timestamp: number) {
       ':' + pad(date.getUTCMinutes()) +
       ':' + pad(date.getUTCSeconds());
 };
+
+export function random() {
+  return parseInt(Math.random().toString().substring(2)).toString(36).substring(0, 7);
+}

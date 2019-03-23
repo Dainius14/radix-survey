@@ -17,7 +17,8 @@
     "restify": "^8.0",
     "restify-cors-middleware": "^1.1.1",
     "restify-errors": "^7.0",
-    "rxjs": "^6.4.0"
+    "rxjs": "^6.4.0",
+    "winston": "^3.2.1"
   },
   "devDependencies": {
     "@types/nedb": "^1.8.7",
