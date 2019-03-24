@@ -72,25 +72,25 @@ export const postSurveyError = (error) => ({
 
 
 export function postSurvey(survey) {
-  return dispatch => {
+  return async dispatch => {
     console.debug('postSurvey() request', survey);
     dispatch(postSurveyRequest());
     
-    return request('http://localhost:8080/api/create-survey', {
+    try {
+      const response = await request('http://localhost:8080/api/create-survey', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json'
         },
         body: JSON.stringify(survey)
-      })
-      .then(response => {
-        console.debug('postSurvey() success', response);
-        dispatch(postSurveySuccess(response));
-      })
-      .catch(error => {
-        console.error('postSurvey() error', error);
-        dispatch(postSurveyError(error));
       });
+      console.debug('postSurvey() success', response);
+      dispatch(postSurveySuccess(response));
+    }
+    catch (error) {
+      console.error('postSurvey() error', error);
+      dispatch(postSurveyError(error));
+    }
   }
 }
 

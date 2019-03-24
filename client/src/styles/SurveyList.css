@@ -1,0 +1,15 @@
+.ant-list-item .ant-list-item-meta-title {
+  font-size: 1.5rem;
+  margin-bottom: 8px;
+}
+.ant-list-item .ant-list-item-meta-title > a {
+  color: #1890ff;
+}
+
+
+.ant-list-item .ant-list-item-meta, .ant-list-item .ant-list-item-content, .ant-list-item-content .ant-typography {
+  margin-bottom: 8px;
+}
+.ant-list-item .ant-list-item-content {
+  font-size: 110%;
+}

@@ -1,11 +1,18 @@
 import React from 'react';
 import { Link } from 'react-router-dom'
 import { connect } from 'react-redux';
-import { List, Typography } from 'antd';
-import * as SurveyListActions from '../actions/SurveyListActions';
-import '../styles/MultilineCode.css';
+import { List, Typography, Icon } from 'antd';
+import * as SurveyListActions from '../../actions/SurveyListActions';
+import '../../styles/MultilineCode.css';
+import '../../styles/SurveyList.css';
 const { Text } = Typography;
 
+const IconText = ({ type, text }) => (
+  <span style={{ marginRight: 24 }}>
+    <Icon type={type} style={{ marginRight: 8 }} />
+    {text}
+  </span>
+);
 
 class SurveyList extends React.Component {
 
@@ -30,32 +37,26 @@ class SurveyList extends React.Component {
     return (
       <>
         <List dataSource={surveys.data.items}
+              itemLayout="vertical"
               loading={surveys.isLoading}
               renderItem={id => {
                 const survey = surveys.data[id];
                 return (
-                  <List.Item actions={[
-                      <span>{survey.questions.length} questions</span>,
-                      <Link to={`/surveys/${survey.id}`}>Open</Link>
-                    ]}>
+                  <List.Item>
                     <List.Item.Meta
                       title={<Link to={`/surveys/${survey.id}`}>{survey.title}</Link>}
-                      description={survey.shortDescription}/>
+                      description={<>
+                        <IconText type="calendar" text={new Date(survey.published).toLocaleString('lt-LT')} />
+                        <IconText type="bars" text={`${survey.questions.length} questions`} />
+                        <IconText type="dollar" text={survey.reward / survey.firstNCount} />
+                        <IconText type="bar-chart" text={`${survey.answerCount} answers`} />
+                      </>}
+                      
+                      />
+                    {survey.shortDescription}
                   </List.Item>
                 );
               }}/>
-        {/* {state.data.items && state.data.items.map(id => {
-
-          return (
-            <Card title={survey.title} key={survey.id}
-                  size="small" type="inner"
-                  extra={<a href='#'>Open</a>}>
-              <div>{survey.shortDescription}</div>
-              <div><b>{survey.questions.items.length}</b> questions</div>
-            </Card>
-          );
-        })} */}
-        
       </>
     );
   }

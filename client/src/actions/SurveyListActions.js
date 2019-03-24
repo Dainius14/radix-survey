@@ -39,41 +39,82 @@ export const getSurveyError = (error) => ({
   error
 });
 
+
+export const POST_SURVEY_ANSWERS_REQUEST = 'POST_SURVEY_ANSWERS_REQUEST';
+export const postSurveyAnswersRequest = () => ({
+  type: POST_SURVEY_ANSWERS_REQUEST
+});
+
+export const POST_SURVEY_ANSWERS_SUCCESS = 'POST_SURVEY_ANSWERS_SUCCESS';
+export const postSurveyAnswersSuccess = (data) => ({
+  type: POST_SURVEY_ANSWERS_SUCCESS,
+  data
+});
+export const POST_SURVEY_ANSWERS_ERROR = 'POST_SURVEY_ANSWERS_ERROR';
+export const postSurveyAnswersError = (error) => ({
+  type: POST_SURVEY_ANSWERS_ERROR,
+  error
+});
+
 export function getSurveys() {
-  return dispatch => {
+  return async dispatch => {
     console.debug('getSurveys() request');
     dispatch(getSurveysRequest());
-    return request('http://localhost:8080/api/surveys', {
+    try {
+      const response = await request('http://localhost:8080/api/surveys', {
         method: 'GET'
-      })
-      .then(response => {
-        console.debug('getSurveys() success', response);
-        dispatch(getSurveysSuccess(response));
-      })
-      .catch(error => {
-        console.error('getSurveys() error', error);
-        dispatch(getSurveysError(error));
       });
+      console.debug('getSurveys() success', response);
+      dispatch(getSurveysSuccess(response));
+    }
+    catch (error) {
+      console.error('getSurveys() error', error);
+      dispatch(getSurveysError(error));
+    }
   }
 }
 
 
 
 export function getSurvey(surveyId) {
-  return dispatch => {
+  return async dispatch => {
     console.debug('getSurvey() request', surveyId);
     dispatch(getSurveyRequest());
     
-    return request(`http://localhost:8080/api/surveys/${surveyId}`, {
+    try {
+      const response = await request(`http://localhost:8080/api/surveys/${surveyId}`, {
         method: 'GET'
-      })
-      .then(response => {
-        console.debug('getSurvey() success', response);
-        dispatch(getSurveySuccess(response));
-      })
-      .catch(error => {
-        console.error('getSurvey() error', error);
-        dispatch(getSurveyError(error));
       });
+      console.debug('getSurvey() success', response);
+      dispatch(getSurveySuccess(response));
+    }
+    catch (error) {
+      console.error('getSurvey() error', error);
+      dispatch(getSurveyError(error));
+    }
+  }
+}
+
+
+export function postSurveyAnswers(surveyId, userRadixAddress, answers) {
+  return async dispatch => {
+    console.debug('postSurveyAnswers() request', { surveyId, userRadixAddress, answers });
+    dispatch(postSurveyAnswersRequest());
+    
+    try {
+      const response = await request(`http://localhost:8080/api/submit-answers`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ surveyId, userRadixAddress, answers })
+      });
+      console.debug('postSurveyAnswers() success', response);
+      dispatch(postSurveyAnswersSuccess(response));
+    }
+    catch (error) {
+      console.error('postSurveyAnswers() error', error);
+      dispatch(postSurveyAnswersError(error));
+    }
   }
 }

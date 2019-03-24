@@ -2,9 +2,9 @@ import React, { Component } from 'react';
 import { Switch, Route } from 'react-router-dom'
 import '../App.css';
 import 'antd/dist/antd.css';
-import CreateSurvey from './NewSurvey';
-import Survey from './Survey';
-import SurveyList from '../containers/SurveyList';
+import CreateSurvey from './NewSurvey/NewSurvey';
+import Survey from './Survey/Survey';
+import SurveyList from './SurveyList/SurveyList';
 import NotFound404 from './NotFound404';
 import Header from './Header';
 import { Layout } from 'antd';

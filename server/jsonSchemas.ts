@@ -6,12 +6,14 @@
 // Required properties are defined in "required" array for each entity.
 // Property types and other attributes for it are defined in "properties" for each property
 
-export const newSurveySchema = {
+export const newSurvey = {
   // Survey info
   "type": "object",
   "additionalProperties": false,
   "required": [
     "radixAddress",
+    "reward",
+    "surveyType",
     "title",
     "shortDescription",
     "questions"
@@ -20,8 +22,29 @@ export const newSurveySchema = {
     "radixAddress": {
       "type": "string",
       "minLength": 51,
-      "maxLength": 51,
-
+      "maxLength": 51
+    },
+    "reward": {
+      "type": "number",
+      "minValue": 0,
+    },
+    "surveyType": {
+      "enum": ["firstN", "randomN"]
+    },
+    "firstNCount": {
+      "type": "integer",
+      "minValue": "1"
+    },
+    "randomNCount": {
+      "type": "integer",
+      "minValue": "1"
+    },
+    "randomNTime": {
+      "type": "integer",
+      "minValue": "1"
+    },
+    "randomNTimeUnits": {
+      "enum": ["minutes", "hours", "days"]
     },
     "title": {
       "type": "string",
@@ -141,4 +164,29 @@ export const newSurveySchema = {
       }
     }
   }
-}
+};
+
+export const surveyAnswers = {
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "surveyId",
+    "userRadixAddress",
+    "answers"
+  ],
+  "properties": {
+    "surveyId": {
+      "type": "string",
+      "minLength": 29,
+      "maxLength": 30
+    },
+    "userRadixAddress": {
+      "type": "string",
+      "minLength": 51,
+      "maxLength": 51
+    },
+    "answers": {
+      "type": "object"
+    }
+  }
+};

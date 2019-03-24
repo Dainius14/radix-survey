@@ -1,6 +1,6 @@
 import React from 'react';
 import { connect } from 'react-redux'
-import * as NewSurveyActions from '../actions/NewSurveyActions';
+import * as NewSurveyActions from '../../actions/NewSurveyActions';
 import { Form, Input, Button, Select, Radio, Checkbox } from 'antd';
 import TextArea from 'antd/lib/input/TextArea';
 const InputGroup = Input.Group;

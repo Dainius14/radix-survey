@@ -3,6 +3,7 @@ import update from 'immutability-helper';
 
 const initialState = {
   isLoading: true,
+  isPostingAnswers: false,
   allLoaded: false,
   error: null,
   data: {
@@ -57,6 +58,27 @@ const surveys = (state = initialState, action) => {
     case Actions.GET_SURVEY_ERROR: {
       return update(state, {
         isLoading: {$set: false},
+        error: {$set: action.error}
+      });
+    }
+
+    case Actions.POST_SURVEY_ANSWERS_REQUEST: {
+      return update(state, {
+        isPostingAnswers: {$set: true},
+        error: {$set: null}
+      });
+    }
+
+    case Actions.POST_SURVEY_ANSWERS_SUCCESS: {
+      return update(state, {
+        isPostingAnswers: {$set: false},
+        error: {$set: null}
+      });
+    }
+    
+    case Actions.POST_SURVEY_ANSWERS_ERROR: {
+      return update(state, {
+        isPostingAnswers: {$set: false},
         error: {$set: action.error}
       });
     }

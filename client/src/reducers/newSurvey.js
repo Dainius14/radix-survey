@@ -6,6 +6,13 @@ const initialState = {
   error: null,
   isPosting: false,
   data: {
+    radixAddress: '',
+    reward: 0,
+    surveyType: 'firstN',
+    firstNCount: 2,
+    randomNCount: 2,
+    randomNTime: 10,
+    randomNTimeUnits: 'hours',
     title: '',
     shortDescription: '',
     questions: {
