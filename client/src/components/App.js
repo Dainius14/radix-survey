@@ -7,7 +7,7 @@ import Survey from './Survey/Survey';
 import SurveyList from './SurveyList/SurveyList';
 import NotFound404 from './NotFound404';
 import Header from './Header';
-import { Layout } from 'antd';
+import { Layout, Icon } from 'antd';
 const { Content, Footer } = Layout;
 
 
@@ -39,7 +39,7 @@ class App extends Component {
 
 
         <Footer style={{ textAlign: 'center' }}>
-          Dainelio bakis ©2019
+            Dainelio bakis <span style={{ display: 'inline-block', transform: 'rotate(180deg)' }}>©</span>2019
         </Footer>
       </Layout>
     );

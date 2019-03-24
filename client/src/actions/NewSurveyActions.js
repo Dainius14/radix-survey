@@ -70,6 +70,7 @@ export const postSurveyError = (error) => ({
 });
 
 
+const API_ENDPOINT = process.env.REACT_APP_API_ENDPOINT || window.location.origin;
 
 export function postSurvey(survey) {
   return async dispatch => {
@@ -77,7 +78,7 @@ export function postSurvey(survey) {
     dispatch(postSurveyRequest());
     
     try {
-      const response = await request('http://localhost:8080/api/create-survey', {
+      const response = await request(`${API_ENDPOINT}/api/create-survey`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json'

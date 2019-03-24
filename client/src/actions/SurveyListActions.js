@@ -56,12 +56,14 @@ export const postSurveyAnswersError = (error) => ({
   error
 });
 
+const API_ENDPOINT = process.env.REACT_APP_API_ENDPOINT || window.location.origin;
+
 export function getSurveys() {
   return async dispatch => {
     console.debug('getSurveys() request');
     dispatch(getSurveysRequest());
     try {
-      const response = await request('http://localhost:8080/api/surveys', {
+      const response = await request(`${API_ENDPOINT}/api/surveys`, {
         method: 'GET'
       });
       console.debug('getSurveys() success', response);
@@ -82,7 +84,7 @@ export function getSurvey(surveyId) {
     dispatch(getSurveyRequest());
     
     try {
-      const response = await request(`http://localhost:8080/api/surveys/${surveyId}`, {
+      const response = await request(`${API_ENDPOINT}/api/surveys/${surveyId}`, {
         method: 'GET'
       });
       console.debug('getSurvey() success', response);
@@ -102,7 +104,7 @@ export function postSurveyAnswers(surveyId, userRadixAddress, answers) {
     dispatch(postSurveyAnswersRequest());
     
     try {
-      const response = await request(`http://localhost:8080/api/submit-answers`, {
+      const response = await request(`${API_ENDPOINT}/api/submit-answers`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json'

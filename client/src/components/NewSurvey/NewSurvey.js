@@ -75,7 +75,7 @@ function NewSurvey({ state, editSurveyProperty, postSurvey }) {
       </Form.Item>
 
       <Paragraph></Paragraph>
-      <Paragraph>Transfer <b>{surveyOptions.reward * surveyOptions.randomNCount}</b> tokens to: <Text code>9g7MxcyYrXAFpMMMnPZD74etUAdd7kiRufpkxeuf921haFgAiNs</Text></Paragraph>
+      <Paragraph>Transfer <b>{surveyOptions.reward * surveyOptions.firstNCount}</b> tokens to: <Text code>9g7MxcyYrXAFpMMMnPZD74etUAdd7kiRufpkxeuf921haFgAiNs</Text></Paragraph>
 
       <Divider />
 

@@ -83,7 +83,7 @@ RadixKeyStore.decryptKey(key, env.keyPassword)
     identity = new RadixSimpleIdentity(keyPair);
 
     account = identity.account;
-    account.enableCache(new RadixNEDBAtomCache('./servercache.db'));
+    account.enableCache(new RadixNEDBAtomCache('./cache.db'));
     account.openNodeConnection();
     logger.info('Account address: ' + account.getAddress());
 
@@ -258,6 +258,15 @@ server.post('/api/submit-answers', (req, res, next) => {
   res.send({ ok: 'ok' });
   return next();
 });
+
+
+/**
+ * Serve React
+ */
+server.get('/*', restify.plugins.serveStatic({
+  directory: './public',
+  default: 'index.html'
+}));
 
 /**
  * Takes survey of given answers and checks if answers are valid for given questions
