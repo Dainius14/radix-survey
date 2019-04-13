@@ -1,0 +1,7 @@
+.question-delete-button {
+  color: #999;
+}
+.question-delete-button:hover {
+  color: #F00;
+  border-color: #F00;
+}

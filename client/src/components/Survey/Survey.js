@@ -8,10 +8,10 @@ import '../../styles/NoBottomMargin.css';
 const { TextArea } = Input;
 const { Title, Paragraph, Text } = Typography;
 
-const questionTextStyle = {
-  marginTop: '1.5em',
-  marginBottom: '0.1em'
-}
+// const questionTextStyle = {
+//   marginTop: '1.5em',
+//   marginBottom: '0.1em'
+// }
 
 class Survey extends React.Component {
 
@@ -130,10 +130,16 @@ class Survey extends React.Component {
               );
           })}
 
-          <Button type="primary" htmlType="submit" loading={this.props.isPostingAnswers}
+<Button type="primary" htmlType="submit" loading={this.props.isPostingAnswers}
                   style={{ marginTop: '2em', marginLeft: 'auto', marginRight: 'auto', display: 'block' }}>
             Submit answers
           </Button>
+          {/* eslint-disable-next-line  */}
+          <a href="#"
+                  style={{ marginTop: '2em', marginLeft: 'auto', marginRight: 'auto', display: 'block' }}>
+            Show results
+          </a>
+          
         </Form>
       </>
     );

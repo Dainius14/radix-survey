@@ -7,7 +7,7 @@ import Survey from './Survey/Survey';
 import SurveyList from './SurveyList/SurveyList';
 import NotFound404 from './NotFound404';
 import Header from './Header';
-import { Layout, Icon } from 'antd';
+import { Layout } from 'antd';
 const { Content, Footer } = Layout;
 
 

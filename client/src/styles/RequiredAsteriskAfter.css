@@ -2,7 +2,7 @@
   display: none;
 }
 
-.ant-form-item-required > ::after {
+.ant-form-item-required > ::after, .form-item-required > .ant-form-item-label > ::after {
   display: inline-block;
   margin-left: 4px;
   vertical-align: top;
