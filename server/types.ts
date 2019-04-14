@@ -15,24 +15,30 @@ export enum AppDataType {
 
 export interface Survey extends AppData {
   title: string;
-  reward: number;
+  description: string;
   surveyType: SurveyType;
+  winnerSelection: WinnerSelection;
+  totalReward: number;
   firstNCount: number;
   published: number;
-  shortDescription: string;
   radixAddress: string;
-  question: Question[];
+  questions: Question[];
 }
 
 export enum SurveyType {
+  Free = 'free',
+  Paid = 'paid'
+}
+export enum WinnerSelection {
   FirstN = 'firstN',
-  RandomN = 'randomN'
+  RandomNAfterTime = 'randomNAfterTime',
+  RandomNAfterMParticipants = 'randomNAfterMParticipants',
 }
 
 export interface Question {
   questionText: string;
-  questionType: string;
-  required: boolean;
+  type: string;
+  // required: boolean;
   answerChoices: AnswerChoice[];
 }
 

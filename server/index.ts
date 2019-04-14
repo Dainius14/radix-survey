@@ -5,11 +5,10 @@ import Ajv from 'ajv';
 import { filter as rxFilter } from 'rxjs/operators';
 import winston, { format } from 'winston';
 
-import env from './.env.json';
 import key from './key.json';
 import { newSurvey, surveyAnswers } from './jsonSchemas';
 import { random } from './utils';
-import { Survey, Answers, AppData, Payload, AppDataType, SurveyType } from './types';
+import { Survey, Answers, AppData, Payload, AppDataType, SurveyType, WinnerSelection } from './types';
 import { TSMap } from 'typescript-map';
 import { info } from 'verror';
 
@@ -78,7 +77,7 @@ RadixLogger.setLevel('warn'); // Available levels: trace/debug/info/warn/error
 let identity: RadixSimpleIdentity;
 let account: RadixAccount;
 
-RadixKeyStore.decryptKey(key, env.keyPassword)
+RadixKeyStore.decryptKey(key, process.env.KEY_PASSWORD as string)
   .then((keyPair) => {
     identity = new RadixSimpleIdentity(keyPair);
 
@@ -108,11 +107,10 @@ RadixKeyStore.decryptKey(key, env.keyPassword)
       for (let i = 0; i < waitingSurveys.length; i++) {
         const survey = waitingSurveys[i];
         if (survey.radixAddress === participants[0]) {
-          // TODO calculate for other types
-          const requiredSum = survey.reward * survey.firstNCount;
-          logger.info(`Found survey '${survey.title}' waiting for a transaction of ${requiredSum}`);
-          if (balance < requiredSum) {
-            logger.info(`Received tokens are not sufficient`);
+          logger.info(`Found survey '${survey.title}' waiting for a transaction of ${survey.totalReward}`);
+
+          if (balance < survey.totalReward) {
+            logger.info(`Received ${balance} tokens are not sufficient (required ${survey.totalReward})`);
             continue;
           }
           logger.info(`Received tokens are sufficient`);
@@ -124,7 +122,7 @@ RadixKeyStore.decryptKey(key, env.keyPassword)
 
 
     // Subscribe to all data
-    account.dataSystem.getApplicationData(env.appId)
+    account.dataSystem.getApplicationData(process.env.APP_ID as string)
       .subscribe({
         next: item => {
           const data = item.data;
@@ -140,7 +138,7 @@ RadixKeyStore.decryptKey(key, env.keyPassword)
  * Returns a list of surveys.
  */
 server.get('/api/surveys', (req, res, next) => {
-  const surveys = account.dataSystem.applicationData.get(env.appId).values()
+  const surveys = account.dataSystem.applicationData.get(process.env.APP_ID as string).values()
     .sort((a, b) => {
       return a.timestamp - b.timestamp;
     })
@@ -175,45 +173,31 @@ server.get('/api/surveys/:survey_id', (req, res, next) => {
 /**
  * Validates survey and adds it to waiting list.
  */
-server.post('/api/create-survey', (req, res, next) => {
+server.post('/api/surveys', (req, res, next) => {
   const isValid = testNewSurvey(req.body);
   if (!isValid) {
     logger.warn('Invalid new survey: ' + ajv.errorsText(testNewSurvey.errors))
-    return next(
-      new errors.BadRequestError(JSON.stringify(testNewSurvey.errors))
-    );
+    return next(new errors.BadRequestError(JSON.stringify(testNewSurvey.errors)));
   }
 
-  // Request valid
-
-  // Clean up survey data:
-  // Questions will be transformed to array which is already sorted the way it needs to be
-  // Ids are not neccessary anymore, since quesiton position in the array will be a good
-  // identifier.
-  // Same goes for answer choices
-  const newQuestions = req.body.questions.items.map((questionId: number) => {
-    const question = { ...req.body.questions[questionId] };
-    delete question.id;
-
-    if (question.answerChoices) {
-      question.answerChoices = question.answerChoices.items.map((answerId: number) => {
-        const answer = { ...question.answerChoices[answerId] };
-        delete answer.id;
-        return answer;
-      });
+  const survey: Survey = { ...req.body, created: new Date().getTime() };
+  switch (survey.surveyType) {
+    case SurveyType.Free: {
+      submitSurveyToRadix(survey);
+      break;
     }
+    case SurveyType.Paid: {
+      waitingSurveys.push(survey);
+      logger.info(`Added survey (created at: ${survey.created}) to waiting list. ` + 
+        `Waiting for a transaction of ${survey.totalReward} ${(radixToken as any).label}`);
+      break;
+    }
+    default:
+      break;
+  }
 
-    return question;
-  });
-
-  const cleanSurvey: Survey = { ...req.body, questions: newQuestions, created: new Date().getTime() };
-
-  waitingSurveys.push(cleanSurvey);
-  const requiredSum = cleanSurvey.reward * cleanSurvey.firstNCount;
-  logger.info(`Added survey (created at: ${cleanSurvey.created}) to waiting list. ` + 
-    `Waiting for a transaction of ${requiredSum} ${(radixToken as any).label}`);
-
-  res.send({ ok: 'ok' });
+  res.status(204);
+  res.send();
   return next();
 });
 
@@ -221,7 +205,8 @@ server.post('/api/create-survey', (req, res, next) => {
 /**
  * Validates answers and adds to RadixDLT
  */
-server.post('/api/submit-answers', (req, res, next) => {
+server.post('/api/surveys/:survey_id/answers', (req, res, next) => {
+  logger.debug('Received some answers...');
   const isValid = testSurveyAnswers(req.body);
   if (!isValid) {
     logger.warn('Invalid survey answers: ' + ajv.errorsText(testSurveyAnswers.errors))
@@ -229,9 +214,9 @@ server.post('/api/submit-answers', (req, res, next) => {
   }
 
   // Answers are syntactically ok
-  const survey = findSurvey(req.body.surveyId);
+  const survey = findSurvey(req.params.survey_id);
   if (!survey) {
-    logger.warn(`Survey ${req.body.surveyId} was not found`);
+    logger.warn(`Survey ${req.params.survey_id} was not found`);
     return next(new errors.BadRequestError());
   }
 
@@ -242,20 +227,29 @@ server.post('/api/submit-answers', (req, res, next) => {
     return next(new errors.BadRequestError());
   }
 
-  const answers: Answers = { ...req.body, created: new Date().getTime() };
   // Answers are valid
-  logger.info(`Survey ${survey.id} type: ${survey.surveyType}`);
-  if (survey.surveyType == SurveyType.FirstN) {
-    const answerCount = getSurveyAnswerCount(survey.id);
-    logger.info(`Survey answer count is ${answerCount} and first ${survey.firstNCount} people must be rewarded`);
-
-    if (answerCount <= survey.firstNCount) {
-      transferTokens(answers.userRadixAddress, survey.reward);
+  const answers: Answers = { ...req.body, created: new Date().getTime() };
+  logger.debug(`Survey ${survey.id} type: ${survey.surveyType}`);
+  
+  if (survey.surveyType === SurveyType.Paid) {
+    logger.debug(`Survey ${survey.id} winner selection: ${survey.winnerSelection}`);
+    switch (survey.winnerSelection) {
+      case WinnerSelection.FirstN: {
+        const answerCount = getSurveyAnswerCount(survey.id);
+        logger.debug(`Survey answer count is ${answerCount} and first ${survey.firstNCount} people must be rewarded`);
+  
+        if (answerCount <= survey.firstNCount) {
+          transferTokens(answers.userRadixAddress, survey.totalReward / survey.firstNCount);
+        }
+      }
+      default:
+        break;
     }
   }
-  submitAnswersToRadix(answers);
 
-  res.send({ ok: 'ok' });
+  submitAnswersToRadix(answers);
+  res.status(204)
+  res.send();
   return next();
 });
 
@@ -300,7 +294,7 @@ function submitAnswersToRadix(answers: Answers) {
 function submitToRadix(payload: Payload) {
   logger.info(`Submitting ${payload.type} to the ledger...`);
   RadixTransactionBuilder
-    .createPayloadAtom([identity.account], env.appId, JSON.stringify(payload))
+    .createPayloadAtom([identity.account], process.env.APP_ID as string, JSON.stringify(payload))
     .signAndSubmit(identity)
     .subscribe({
       next: state => {
@@ -337,7 +331,7 @@ function transferTokens(userAddress: string, amount: number) {
 
 
 function findSurvey(surveyId: string): Survey|null {
-  const item = account.dataSystem.applicationData.get(env.appId).values().find(item => {
+  const item = account.dataSystem.applicationData.get(process.env.APP_ID as string).values().find(item => {
     return item.hid === surveyId;
   });
 
@@ -352,7 +346,7 @@ function findSurvey(surveyId: string): Survey|null {
  * Counts number of submitted answers for given survey.
  */
 function getSurveyAnswerCount(surveyId: string): number {
-  return account.dataSystem.applicationData.get(env.appId).values().reduce((acc, item) => {
+  return account.dataSystem.applicationData.get(process.env.APP_ID as string).values().reduce((acc, item) => {
     const payload: Payload = JSON.parse(item.payload);
     if (payload.type == AppDataType.Answers && (payload.data as Answers).surveyId == surveyId) {
       acc++;
@@ -368,5 +362,5 @@ const testSurveyAnswers = ajv.compile(surveyAnswers);
 
 server.listen(8080, function () {
   logger.info(`${server.name} listening at ${server.url}`);
-  logger.info(`Current Application ID: ${env.appId}`);
+  logger.info(`Current Application ID: ${process.env.APP_ID}`);
 });

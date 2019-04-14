@@ -32,7 +32,7 @@ function QuestionList ({ form, push, remove }) {
 
 
 function Question({ form, question, index, removeQuestion }) {
-  console.log(form)
+  // TODO Opt for something less cryptic maybe?
   const touchedQuestions = form.touched.questions;
   const errorQuestions = form.errors.questions;
   const touchedQuestionText = touchedQuestions && touchedQuestions[index] && touchedQuestions[index].questionText;
@@ -42,15 +42,16 @@ function Question({ form, question, index, removeQuestion }) {
   const errorAnswers = form.errors.answers;
   const questionAnswers = form.values.answers.map((x, i) =>
     ({ ...x, touched: touchedAnswers && !!touchedAnswers[i], error: errorAnswers && errorAnswers[i] && errorAnswers[i].answerText }))
-    .filter(x => x.questionId == question.id);
+    .filter(x => x.questionId === question.id);
 
   const touchedAnswer = questionAnswers.some(x => x.touched);
   const errorAnswer = questionAnswers.find(x => x.error);
   const errorNoAnswer = ['checkbox', 'radio'].indexOf(question.type) !== -1 && questionAnswers.length === 0 && 'This question must have at least 1 answer choice';
   const showError = (errorQuestionText && touchedQuestionText) || (errorAnswer && touchedAnswer) || (errorNoAnswer && touchedQuestionText);
   const error = errorQuestionText ? errorQuestionText : (errorAnswer ? errorAnswer.error : ( errorNoAnswer ? errorNoAnswer : false));
-  console.log(questionAnswers, touchedAnswer, errorAnswer, errorNoAnswer, showError, error)
+
   return (
+    // TODO all fields are red, when only on fails
     <Form.Item label={index === 0 ? 'Questions' : ''}
                help={showError && error}
                validateStatus={showError && error ? "error" : "success"}>
@@ -119,7 +120,7 @@ function Answers({ question, form, push, remove }) {
   const addAnswer = () => push({ ...answerTemplate, id: answerId++, questionId: question.id });
   const removeAnswer = (index) => remove(index);
   const validateAnswer = (value) => {
-    if (['radio', 'checkbox'].indexOf(question.type) != -1 && !value.trim()) {
+    if (['radio', 'checkbox'].indexOf(question.type) !== -1 && !value.trim()) {
       return 'Supply an answer choice or delete it';
     }
     return undefined;
@@ -183,8 +184,7 @@ let questionId = 0;
 const questionTemplate = {
   id: undefined,
   questionText: '',
-  type: 'radio',
-  answers: []
+  type: 'radio'
 };
 
 let answerId = 0;

@@ -7,160 +7,123 @@
 // Property types and other attributes for it are defined in "properties" for each property
 
 export const newSurvey = {
-  // Survey info
   "type": "object",
-  "additionalProperties": false,
   "required": [
-    "radixAddress",
-    "reward",
-    "surveyType",
     "title",
-    "shortDescription",
+    "description",
+    "surveyType",
     "questions"
   ],
+  "else": {
+  	"additionalProperties": false,
+  },
   "properties": {
+    "title": {
+      "type": "string",
+      "minLength": 0,
+      "maxLength": 100
+    },
+    "description": {
+      "type": "string",
+      "minLength": 0,
+      "maxLength": 1000
+    },
+    "surveyType": {
+      "enum": [
+        "free",
+        "paid"
+      ]
+    },
     "radixAddress": {
       "type": "string",
       "minLength": 51,
       "maxLength": 51
     },
-    "reward": {
+    "totalReward": {
       "type": "number",
       "minValue": 0,
-    },
-    "surveyType": {
-      "enum": ["firstN", "randomN"]
     },
     "firstNCount": {
       "type": "integer",
       "minValue": "1"
     },
-    "randomNCount": {
+    "randomNAfterTimeCount": {
       "type": "integer",
       "minValue": "1"
     },
-    "randomNTime": {
+    "randomNAfterTimeLength": {
       "type": "integer",
       "minValue": "1"
     },
-    "randomNTimeUnits": {
-      "enum": ["minutes", "hours", "days"]
-    },
-    "title": {
-      "type": "string",
-      "minLength": 0,
-      "maxLength": 50
-    },
-    "shortDescription": {
-      "type": "string",
-      "minLength": 0,
-      "maxLength": 1000
+    "randomNAfterTimeUnits": {
+      "enum": ["hours", "days", "weeks"]
     },
 
-    // Questions
+    /*Questions*/
     "questions": {
-      "type": "object",
-      "required": [
-        "items"
-      ],
-      "properties": {
-        "items": {
-          "type": "array",
-          "minItems": 1,
-          "items": {
-            "type": "integer"
-          }
-        }
-      },
-
-      // Question properties
-      "additionalProperties": {
+      "type": "array",
+      "items": {
         "type": "object",
+        "minItems": 1,
         "required": [
-          "id",
           "questionText",
-          "questionType",
-          "required"
+          "type"
         ],
-        "additionalProperties": false,
-        
-        // If questionType is radio or checkbox, answerChoices are required
-        // with minimum item count of 2
-        "anyOf": [
-          {
-          	"properties": {
-              "questionType": { "enum": ["radio", "checkbox"] },
-              "answerChoices": {
-                "properties": {
-                  "items": {
-                  	"minItems": 2
-                  }
-                }
-              }
-          	},
-            "required": ["answerChoices"]
-          },
-          {
-          	"properties": {
-              "questionType": { "enum": ["shortText", "longText"] },
-              "answerChoices": { "not": {} }
-          	}
-          }
-        ],
-          
         "properties": {
-          "id": {
-            "type": "integer"
-          },
           "questionText": {
-            "type": "string",
-            "minLength": 0,
-            "maxLength": 100,
+            "type": "string"
           },
-          "questionType": {
+          "type": {
             "enum": [
               "radio",
               "checkbox",
               "shortText",
               "longText"
             ]
-          },
-          "required": {
-            "type": "boolean"
-          },
-            
-          // Answer choices
-          "answerChoices": {
-          	"type": "object",
-            "required": ["items"],
+          }
+        }/* If questionType is radio or checkbox, answerChoices are required with minimum item count of 2*/,
+        "anyOf": [
+          {
             "properties": {
-              "items": {
-              	"type": "array",
+              "type": {
+                "enum": [
+                  "radio",
+                  "checkbox"
+                ]
+              },
+              "answerChoices": {
+                "type": "array",
                 "items": {
-                  "type": "integer"
+                  "type": "object",
+                  "required": [
+                    "answerText"
+                  ],
+                  "properties": {
+                    "answerText": {
+                      "type": "string"
+                    }
+                  }
                 }
               }
             },
-            
-            "additionalProperties": {
-              "type": "object",
-              "required": ["id", "answerText"],
-              "additionalProperties": false,
-
-              // Answer choice properties
-              "properties": {
-                "id": {
-                  "type": "integer"
-                },
-                "answerText": {
-                  "type": "string",
-                  "minLength": 0,
-                  "maxLength": 100
-                }
+            "required": [
+              "answerChoices"
+            ]
+          },
+          {
+            "properties": {
+              "type": {
+                "enum": [
+                  "shortText",
+                  "longText"
+                ]
+              },
+              "answers": {
+                "not": {}
               }
             }
           }
-        }
+        ]
       }
     }
   }

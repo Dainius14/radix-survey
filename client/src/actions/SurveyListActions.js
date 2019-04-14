@@ -104,12 +104,12 @@ export function postSurveyAnswers(surveyId, userRadixAddress, answers) {
     dispatch(postSurveyAnswersRequest());
     
     try {
-      const response = await request(`${API_ENDPOINT}/api/submit-answers`, {
+      const response = await request(`${API_ENDPOINT}/api/surveys/${surveyId}/answers`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json'
         },
-        body: JSON.stringify({ surveyId, userRadixAddress, answers })
+        body: JSON.stringify({ userRadixAddress, answers })
       });
       console.debug('postSurveyAnswers() success', response);
       dispatch(postSurveyAnswersSuccess(response));

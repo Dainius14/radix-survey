@@ -9,6 +9,13 @@ import fetch from 'cross-fetch';
  * @return {object}          The parsed JSON, status from the response
  */
 function parseJSON(response) {
+  if (response.status === 204) {
+    return new Promise((resolve) => resolve({
+      status: response.status,
+      ok: response.ok,
+    }));
+  };
+
   return new Promise((resolve) => response.json()
     .then((json) => resolve({
       status: response.status,
@@ -31,7 +38,7 @@ export function request(url, options) {
       .then(parseJSON)
       .then((response) => {
         if (response.ok) {
-          return resolve(response.json);
+          return resolve(response.json || null);
         }
         // extract the error from the server's json
         return reject({ code: response.json.code, message: JSON.parse(response.json.message) });

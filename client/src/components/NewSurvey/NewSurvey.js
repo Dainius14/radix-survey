@@ -6,12 +6,10 @@ import * as Yup from 'yup';
 import '../../styles/RequiredAsteriskAfter.css';
 import '../../styles/AntFormItemLabelHeight.css';
 import QuestionList from './QuestionList';
+import { WinnerSelection } from '../../constants';
+import { request } from '../../utilities';
 const { Text, Paragraph } = Typography;
 const { Option } = Select;
-
-const WINNER_SEL_FIRST_N = 'firstN';
-const WINNER_SEL_RANDOM_N_AFTER_TIME = 'randomNAfterTime';
-const WINNER_SEL_RANDOM_N_AFTER_M_PARTICIPANTS = 'randomNAfterMParticipants';
 
 
 
@@ -20,7 +18,7 @@ const initialValues = {
   description: '',
   surveyType: 'free',
 
-  winnerSelection: WINNER_SEL_FIRST_N,
+  winnerSelection: WinnerSelection.FirstN,
   
   firstNCount: 0,
   
@@ -58,7 +56,7 @@ const validationSchema = Yup.object().shape({
       then: Yup.number().notRequired(),
       otherwise: Yup.number()
         .when('winnerSelection', {
-          is: WINNER_SEL_FIRST_N,
+          is: WinnerSelection.FirstN,
           then: Yup.number().min(1, winnerCountErrorMsg)
             .typeError(winnerCountErrorMsg).required(winnerCountErrorMsg)
             .integer(winnerCountNotIntErrorMsg),
@@ -72,7 +70,7 @@ const validationSchema = Yup.object().shape({
       then: Yup.number().notRequired(),
       otherwise: Yup.number()
         .when('winnerSelection', {
-          is: WINNER_SEL_RANDOM_N_AFTER_TIME,
+          is: WinnerSelection.RandomNAfterTime,
           then: Yup.number().min(1, winnerCountErrorMsg)
             .typeError(winnerCountErrorMsg).required(winnerCountErrorMsg)
             .integer(winnerCountNotIntErrorMsg),
@@ -86,7 +84,7 @@ const validationSchema = Yup.object().shape({
       then: Yup.number().notRequired(),
       otherwise: Yup.number()
         .when('winnerSelection', {
-          is: WINNER_SEL_RANDOM_N_AFTER_TIME,
+          is: WinnerSelection.RandomNAfterTime,
           then: Yup.number().min(1, randomNAFterMTimeTimeErrorMsg).typeError(randomNAFterMTimeTimeErrorMsg).required(randomNAFterMTimeTimeErrorMsg),
           otherwise: Yup.number().notRequired()
         })
@@ -98,7 +96,7 @@ const validationSchema = Yup.object().shape({
       then: Yup.string().notRequired(),
       otherwise: Yup.string()
         .when('winnerSelection', {
-          is: WINNER_SEL_RANDOM_N_AFTER_TIME,
+          is: WinnerSelection.RandomNAfterTime,
           then: Yup.string().trim().required(),
           otherwise: Yup.string().notRequired()
         })
@@ -122,26 +120,86 @@ const validationSchema = Yup.object().shape({
   questions: Yup.array(questionValidationSchema).min(1, 'Add at least 1 question before submitting'),
 });
 
-
-class NewSurveyContainer extends React.Component {
-  handleSubmit = (values, form) => {
-    console.log('Form valid');
-    form.setSubmitting(false);
+async function handleSubmit(values, form) {
+  console.log('Form valid');
+  form.setSubmitting(false);
+  
+  // Create cleaned up object to send to server
+  const survey = {
+    title: values.title,
+    description: values.description,
+    surveyType: values.surveyType,
   }
 
-  render() {
-    return (
-      <Formik initialValues={initialValues} validationSchema={validationSchema}
-              onSubmit={this.handleSubmit}
-              render={NewSurveyForm}/>
-    );
+  if (values.surveyType === 'paid') {
+    survey.winnerSelection = values.winnerSelection;
+    survey.radixAddress = values.radixAddress;
+    survey.totalReward = values.totalReward;
+    switch (values.winnerSelection) {
+      case WinnerSelection.FirstN:
+        survey.firstNCount = values.firstNCount;
+        break;
+      case WinnerSelection.RandomNAfterTime:
+        survey.randomNAfterTimeCount = values.randomNAfterTimeCount;
+        survey.randomNAfterTimeLength = values.randomNAfterTimeLength;
+        survey.randomNAfterTimeUnits = values.randomNAfterTimeUnits;
+        break;
+      case WinnerSelection.RandomNAfterMParticipants:
+        
+        break;
+      default:
+        break;
+    }
   }
+
+  // Filter out undefined questions
+  survey.questions = values.questions.filter(x => x).map(q => {
+    const question = {
+      questionText: q.questionText,
+      type: q.type
+    };
+
+    // Get associated answer choices
+    if (q.type === 'radio' || q.type === 'checkbox') {
+      question.answerChoices = values.answers.filter(x => x.questionId === q.id).map(a => {
+        return {
+          answerText: a.answerText
+        };
+      });
+    }
+    return question;
+  });
+
+  // Post survey to server
+  const apiEndpoint = process.env.REACT_APP_API_ENDPOINT || window.location.origin;
+  console.debug('postSurvey() request:', survey);
+  try {
+    const response = await request(`${apiEndpoint}/api/surveys`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify(survey)
+    });
+    console.debug('postSurvey() success', response);
+  }
+  catch (error) {
+    console.error('postSurvey() error', error);
+  }
+}
+
+function NewSurveyContainer() {
+  return (
+    <Formik initialValues={initialValues} validationSchema={validationSchema}
+            onSubmit={handleSubmit}
+            render={NewSurveyForm}/>
+  );
 }
 
 function NewSurveyForm(form) {
   const { values, handleSubmit } = form;
-  const firstNDisabled = values.winnerSelection !== WINNER_SEL_FIRST_N;
-  const randomNAfterTimeDisabled = values.winnerSelection !== WINNER_SEL_RANDOM_N_AFTER_TIME;
+  const firstNDisabled = values.winnerSelection !== WinnerSelection.FirstN;
+  const randomNAfterTimeDisabled = values.winnerSelection !== WinnerSelection.RandomNAfterTime;
   return (
     <Form className="form-container" onSubmit={handleSubmit}>
       
@@ -169,7 +227,7 @@ function NewSurveyForm(form) {
                   <Radio.Group name="winnerSelection" value={field.value}
                                onChange={e => { form.setFieldValue(field.name, e.target.value); form.setFieldTouched(field.name, true); }}>
 
-                    <Radio value={WINNER_SEL_FIRST_N} style={winnerSelectionRadioStyle}>
+                    <Radio value={WinnerSelection.FirstN} style={winnerSelectionRadioStyle}>
                       <Text>First</Text>
                       
                       <Field name="firstNCount">
@@ -186,7 +244,7 @@ function NewSurveyForm(form) {
                       <Text>to submit answers</Text>
                     </Radio>
 
-                    <Radio value={WINNER_SEL_RANDOM_N_AFTER_TIME} style={winnerSelectionRadioStyle}>
+                    <Radio value={WinnerSelection.RandomNAfterTime} style={winnerSelectionRadioStyle}>
                       <Text>Randomly selected</Text>
 
                       <Field name="randomNAfterTimeCount">
@@ -278,10 +336,10 @@ function getValidateStatus(form, fieldName) {
 
 function winnerSelectionHelpText({ errors, touched, values }) {
   switch (values.winnerSelection) {
-    case WINNER_SEL_FIRST_N: {
+    case WinnerSelection.FirstN: {
       return errors.firstNCount && touched.firstNCount ? errors.firstNCount : false;
     }
-    case WINNER_SEL_RANDOM_N_AFTER_TIME: {
+    case WinnerSelection.RandomNAfterTime: {
       const fields = ['randomNAfterTimeCount', 'randomNAfterTimeLength'];
       return fields.reduce((acc, field) => {
         const error = errors[field] && touched[field] ? errors[field] : '';
@@ -290,7 +348,7 @@ function winnerSelectionHelpText({ errors, touched, values }) {
         return acc;
       }, '');
     }
-    case WINNER_SEL_RANDOM_N_AFTER_M_PARTICIPANTS:
+    case WinnerSelection.RandomNAfterMParticipants:
     default: {
       break;
     }
@@ -307,20 +365,7 @@ function getGroupValidateStatus(form, fieldNames) {
 
 
 function OnePersonReward({ values }) {
-  let winnerCount = 0;
-  switch (values.winnerSelection) {
-    case WINNER_SEL_FIRST_N:
-      winnerCount = values.firstNCount;
-      break;
-    case WINNER_SEL_RANDOM_N_AFTER_TIME:
-      winnerCount = values.randomNAfterTimeCount;
-      break;
-    case WINNER_SEL_RANDOM_N_AFTER_M_PARTICIPANTS:
-      winnerCount = values.randomNAfterMParticipantsCount;
-      break;
-    default:
-      throw new RangeError('Unknown winner selection type')
-  }
+  let winnerCount = values[`${values.winnerSelection}Count`];
   const onePersonWins = values.totalReward / winnerCount || 0;
   const onePersonWinsRounded = Number.isFinite(onePersonWins) && onePersonWins > 0
     ? Math.round(onePersonWins * 100) / 100 : 0;
