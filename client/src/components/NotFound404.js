@@ -1,10 +1,12 @@
 import React from 'react';
+import { Typography } from 'antd';
+const { Title } = Typography;
 
 export default function NotFound404() {
 
   return (
-    <>
-      <h1 style={{ fontSize: '5rem', marginBottom: 0 }}>404</h1>
-      <h3 style={{ fontSize: '2rem' }}>Page does not exist</h3>
-    </>);
+    <div style={{ margin: 'auto', width: 'fit-content' }}>
+      <Title style={{ fontSize: '5rem', marginBottom: 0 }}>404</Title>
+      <Title style={{ fontSize: '2rem', marginTop: 0 }}>Page does not exist</Title>
+    </div>);
 }

@@ -1,26 +1,33 @@
 import React from 'react';
-import { withRouter, NavLink } from 'react-router-dom';
+import { withRouter, matchPath, NavLink } from 'react-router-dom';
 import { Menu, Layout } from 'antd';
+const { Header: AntHeader } = Layout;
 
-function Header(props) {
-  // TODO properly handle url of here
-  const pathname = props.location.pathname;
-  const foundIndex = ['/create-survey', '/surveys'].findIndex(x => pathname.startsWith(x));
-  const selectedIndex = foundIndex !== -1 ? foundIndex.toString() : '1';
+function Header({ location }) {
+  let initialSelectedKey;
+  if (matchPath(location.pathname, { path: '/surveys/create', exact: true })) {
+    initialSelectedKey = '/surveys/create';
+  }
+  else if (matchPath(location.pathname, { path: '/', exact: true })
+    || matchPath(location.pathname, { path: '/surveys', exact: true })
+    || matchPath(location.pathname, { path: '/surveys/:surveyId', exact: true })) {
+    initialSelectedKey = '/surveys';
+  }
   return (
-    <Layout.Header>
-      <Menu theme="dark"
-        mode="horizontal"
-        defaultSelectedKeys={[selectedIndex]}
-        style={{ lineHeight: '64px' }}>
-        <Menu.Item key="0">
-          <NavLink to='/create-survey'>Create a Survey</NavLink>
-        </Menu.Item>
-        <Menu.Item key="1">
+    <AntHeader style={{ background: 'white' }}>
+      <Menu mode="horizontal" defaultSelectedKeys={[initialSelectedKey]}
+            style={{ borderBottom: 'none', display: 'flex', justifyContent: 'center' }}>
+
+        <Menu.Item key="/surveys">
           <NavLink to='/surveys'>Surveys</NavLink>
         </Menu.Item>
+
+        <Menu.Item key="/surveys/create">
+          <NavLink to='/surveys/create'>Create a Survey</NavLink>
+        </Menu.Item>
+
       </Menu>
-    </Layout.Header>
+    </AntHeader>
   );
 }
 
