@@ -13,7 +13,6 @@
   "dependencies": {
     "ajv": "^6.10.0",
     "dotenv": "^7.0.0",
-    "nedb": "^1.8.0",
     "radixdlt": "^1.0.7-alpha",
     "restify": "^8.0",
     "restify-cors-middleware": "^1.1.1",
