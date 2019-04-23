@@ -20,8 +20,7 @@ function QuestionList ({ form, push, remove }) {
     {// Empty form item to show label, info text and
      // validation message when there are no questions
       form.values.questions.length === 0 &&
-      <Form.Item label="Questions"
-                help={form.errors.questions && form.submitCount > 0 ? form.errors.questions : false}
+      <Form.Item help={form.errors.questions && form.submitCount > 0 ? form.errors.questions : false}
                 validateStatus={form.errors.questions && form.submitCount > 0 ? "error" : "success"}>
         <Text>There are no questions. Start by adding some questions!</Text>
       </Form.Item>}
@@ -52,8 +51,7 @@ function Question({ form, question, index, removeQuestion }) {
 
   return (
     // TODO all fields are red, when only on fails
-    <Form.Item label={index === 0 ? 'Questions' : ''}
-               help={showError && error}
+    <Form.Item help={showError && error}
                validateStatus={showError && error ? "error" : "success"}>
       <Input.Group compact>
         

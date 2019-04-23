@@ -11,6 +11,7 @@ export const newSurvey = {
   "required": [
     "title",
     "description",
+    "resultsVisibility",
     "surveyType",
     "questions"
   ],
@@ -27,6 +28,22 @@ export const newSurvey = {
       "type": "string",
       "minLength": 0,
       "maxLength": 1000
+    },
+    "resultsVisibility": {
+      "enum": [
+        "public",
+        "private",
+        "privateForSale"
+      ]
+    },
+    "resultsPassword": {
+      "type": "string",
+      "minLength": 0,
+      "maxLength": 1000
+    },
+    "resultsPrice": {
+      "type": "number",
+      "min": 0
     },
     "surveyType": {
       "enum": [

@@ -8,8 +8,8 @@ const { Option } = Select;
 const CreateAntField = AntComponent => ({
   field,
   form,
-  hasFeedback,
   label,
+  help,
   selectOptions,
   radioOptions,
   type,
@@ -27,8 +27,7 @@ const CreateAntField = AntComponent => ({
   return (
     <FormItem className={required ? 'form-item-required' : ''}
               label={label}
-              hasFeedback={hasFeedback && touched}
-              help={showError ? error : false}
+              help={showError ? error : (help ? help : false)}
               validateStatus={showError ? "error" : "success"} >
       <AntComponent
         {...field}
@@ -50,6 +49,7 @@ const CreateAntField = AntComponent => ({
 export const FormikSelect = CreateAntField(Select);
 export const FormikDatePicker = CreateAntField(DatePicker);
 export const FormikInput = CreateAntField(Input);
+export const FormikInputPassword = CreateAntField(Input.Password);
 export const FormikInputNumber = CreateAntField(InputNumber);
 export const FormikTextArea = CreateAntField(Input.TextArea);
 export const FormikTimePicker = CreateAntField(TimePicker);

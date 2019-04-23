@@ -3,3 +3,9 @@ export const WinnerSelection = {
   RandomNAfterTime: 'randomNAfterTime',
   RandomNAfterMParticipants: 'randomNAfterMParticipants'
 }
+
+export const ResultsVisibility = {
+  Public: 'public',
+  Private: 'private',
+  PrivateForSale: 'privateForSale'
+}

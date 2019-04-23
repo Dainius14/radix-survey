@@ -16,6 +16,9 @@ export enum AppDataType {
 export interface Survey extends AppData {
   title: string;
   description: string;
+  resultsVisibility: ResultsVisibility;
+  resultsPassword: string;
+  resultsPrice: number;
   surveyType: SurveyType;
   winnerSelection: WinnerSelection;
   totalReward: number;
@@ -25,10 +28,17 @@ export interface Survey extends AppData {
   questions: Question[];
 }
 
+export enum ResultsVisibility {
+  Public = 'public',
+  Private = 'private',
+  PrivateForSale = 'privateForSale'
+}
+
 export enum SurveyType {
   Free = 'free',
   Paid = 'paid'
 }
+
 export enum WinnerSelection {
   FirstN = 'firstN',
   RandomNAfterTime = 'randomNAfterTime',

@@ -51,45 +51,46 @@ class Survey extends React.Component {
     }
 
     // Got survey, can render it
-    const { title, shortDescription } = survey;
     return (
       <>
-        <Title>{title}</Title>
-        <Paragraph>{shortDescription}</Paragraph>
+        <Title>{survey.title}</Title>
+        <Paragraph>{survey.description}</Paragraph>
 
         <Divider/>
         <Form layout="vertical" onSubmit={this.handleSubmit}>
 
-          <Form.Item label={<Title level={4} className="no-bottom-margin">Your Radix DLT wallet address</Title>}>
+          {survey.surveyType === 'free' &&
+            <Form.Item label={<Title level={4} className="no-bottom-margin">Your Radix DLT wallet address</Title>}>
+          
             {getFieldDecorator('userRadixAddress', {
               rules: [{ required: true, message: 'Your Radix DLT address is required' }]
             })(
               <Input placeholder='Address of your Radix DLT wallet address where you want to receive the prize'/>
             )}
           </Form.Item>
-        
-          <Divider/>
+          }
+          
           
           {survey.questions.map((question, index) => {
 
             return (
               <Form.Item label={<Title level={3} className="no-bottom-margin">{question.questionText}</Title>}
                           key={index}>
-                {question.questionType === 'shortText' && getFieldDecorator(index.toString(), {
+                {question.type === 'shortText' && getFieldDecorator(index.toString(), {
                   rules: [{ required: question.required, message: 'This answer is required' }]
                 })(
                   <Input placeholder='Your answer...'/>
                 )}
 
 
-                {question.questionType === 'longText' && getFieldDecorator(index.toString(), {
+                {question.type === 'longText' && getFieldDecorator(index.toString(), {
                   rules: [{ required: question.required, message: 'This answer is required' }]
                 })(
                   <TextArea placeholder='Your answer...'/>
                 )}
 
 
-                {question.questionType === 'radio' && getFieldDecorator(index.toString(), {
+                {question.type === 'radio' && getFieldDecorator(index.toString(), {
                   rules: [{ required: question.required, message: 'This answer is required' }]
                 })(
                   <Radio.Group>
@@ -107,7 +108,7 @@ class Survey extends React.Component {
                 )}
 
 
-                {question.questionType === 'checkbox' && getFieldDecorator(index.toString(), {
+                {question.type === 'checkbox' && getFieldDecorator(index.toString(), {
                   rules: [{ required: question.required, message: 'This answer is required' }]
                 })(
                   <Checkbox.Group>
