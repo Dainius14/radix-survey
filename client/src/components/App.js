@@ -5,6 +5,7 @@ import { Layout } from 'antd';
 import Header from './Header';
 import CreateSurvey from './NewSurvey/NewSurvey';
 import Survey from './Survey/Survey';
+import Results from './Survey/Results';
 import SurveyList from './SurveyList/SurveyList';
 import NotFound404 from './NotFound404';
 const { Content, Footer } = Layout;
@@ -15,13 +16,14 @@ function App() {
       
       <Content style={{ padding: '0', margin: '8px auto', width: 700, }}>
         <Header/>
-        <div style={{ backgroundColor: 'white', padding: '0px 24px 24px 24px' }}>
 
+        <div style={{ backgroundColor: 'white', padding: '0px 24px 24px 24px' }}>
           <Switch>
             <Route exact path='/' component={SurveyList}/>
             <Route exact path='/surveys' component={SurveyList}/>
             <Route exact path='/surveys/create'component={CreateSurvey} />
             <Route exact path='/surveys/:surveyId' component={Survey} />
+            <Route exact path='/surveys/:surveyId/results' component={Results} />
             <Route path='*' component={NotFound404} />
           </Switch>
 

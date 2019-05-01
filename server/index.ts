@@ -8,7 +8,7 @@ import winston, { format } from 'winston';
 import key from './key.json';
 import { newSurvey, surveyAnswers } from './jsonSchemas';
 import { random } from './utils';
-import { Survey, Answers, AppData, Payload, AppDataType, SurveyType, WinnerSelection } from './types';
+import { Survey, Response, AppData, Payload, AppDataType, SurveyType, WinnerSelection, ResultsVisibility } from './types';
 import { TSMap } from 'typescript-map';
 import { info } from 'verror';
 
@@ -140,12 +140,12 @@ RadixKeyStore.decryptKey(key, process.env.KEY_PASSWORD as string)
 server.get('/api/surveys', (req, res, next) => {
   const surveys = account.dataSystem.applicationData.get(process.env.APP_ID as string).values()
     .sort((a, b) => {
-      return a.timestamp - b.timestamp;
+      return b.timestamp - a.timestamp;
     })
     .reduce((acc: any, item) => {
       const payload: Payload = JSON.parse(item.payload);
       if (payload.type == AppDataType.Survey) {
-        acc[item.hid] = { ...payload.data, id: item.hid, published: item.timestamp, answerCount: getSurveyAnswerCount(item.hid) };
+        acc[item.hid] = { ...payload.data, id: item.hid, published: item.timestamp, responseCount: getSurveyResponseCount(item.hid) };
         acc.items.push(item.hid);
       }
       return acc;
@@ -166,6 +166,25 @@ server.get('/api/surveys/:survey_id', (req, res, next) => {
   }
 
   res.send(survey);
+  return next();
+});
+
+/**
+ * Returns a results for a survey.
+ */
+server.get('/api/surveys/:survey_id/results', (req, res, next) => {
+  const survey = findSurvey(req.params.survey_id);
+
+  if (!survey) {
+    return next(new errors.NotFoundError());
+  }
+
+  if (survey.resultsVisibility === ResultsVisibility.Public) {
+    const response = { survey, responses: getSurveyResponses(req.params.survey_id)};
+    res.send(response);
+  }
+
+  res.status(200);
   return next();
 });
 
@@ -228,14 +247,14 @@ server.post('/api/surveys/:survey_id/answers', (req, res, next) => {
   }
 
   // Answers are valid
-  const answers: Answers = { ...req.body, created: new Date().getTime() };
+  const answers: Response = { ...req.body, created: new Date().getTime(), surveyId: survey.id };
   logger.debug(`Survey ${survey.id} type: ${survey.surveyType}`);
   
   if (survey.surveyType === SurveyType.Paid) {
     logger.debug(`Survey ${survey.id} winner selection: ${survey.winnerSelection}`);
     switch (survey.winnerSelection) {
       case WinnerSelection.FirstN: {
-        const answerCount = getSurveyAnswerCount(survey.id);
+        const answerCount = getSurveyResponseCount(survey.id);
         logger.debug(`Survey answer count is ${answerCount} and first ${survey.firstNCount} people must be rewarded`);
   
         if (answerCount <= survey.firstNCount) {
@@ -266,7 +285,7 @@ server.get('/*', restify.plugins.serveStatic({
  * Takes survey of given answers and checks if answers are valid for given questions
  * TODO complete this method
  */
-function testAnswersAgainstSurvey(answers: Answers, survey: Survey) {
+function testAnswersAgainstSurvey(answers: Response, survey: Survey) {
   return true;
 }
 
@@ -282,7 +301,7 @@ function submitSurveyToRadix(survey: Survey) {
 }
 
 /** Encapsulates and submits user answers */
-function submitAnswersToRadix(answers: Answers) {
+function submitAnswersToRadix(answers: Response) {
   const appData = {
     type: AppDataType.Answers,
     data: answers
@@ -343,16 +362,22 @@ function findSurvey(surveyId: string): Survey|null {
 }
 
 /**
- * Counts number of submitted answers for given survey.
  */
-function getSurveyAnswerCount(surveyId: string): number {
-  return account.dataSystem.applicationData.get(process.env.APP_ID as string).values().reduce((acc, item) => {
+function getSurveyResponses(surveyId: string): Response[] {
+  return account.dataSystem.applicationData.get(process.env.APP_ID as string).values().reduce((acc: Response[], item) => {
     const payload: Payload = JSON.parse(item.payload);
-    if (payload.type == AppDataType.Answers && (payload.data as Answers).surveyId == surveyId) {
-      acc++;
+    if (payload.type == AppDataType.Answers && (payload.data as Response).surveyId == surveyId) {
+      acc.push(payload.data as Response);
     }
     return acc;
-  }, 0);
+  }, []);
+}
+
+/**
+ * Counts number of submitted answers for given survey.
+ */
+function getSurveyResponseCount(surveyId: string): number {
+  return getSurveyResponses(surveyId).length;
 }
 
 const ajv = Ajv({ allErrors: true });

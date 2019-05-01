@@ -23,6 +23,31 @@ export function getSurveysError(error) {
   };
 }
 
+
+export const GET_SURVEY_RESULTS_REQUEST = 'GET_SURVEYS_RESULTS_REQUEST';
+export function getSurveyResultsRequest() {
+  return {
+    type: GET_SURVEY_RESULTS_REQUEST
+  };
+}
+
+export const GET_SURVEY_RESULTS_SUCCESS = 'GET_SURVEYS_RESULTS_SUCCESS';
+export function getSurveyResultsSuccess(data) {
+  return {
+    type: GET_SURVEY_RESULTS_SUCCESS,
+    data
+  };
+}
+
+
+export const GET_SURVEY_RESULTS_ERROR = 'GET_SURVEYS_RESULTS_ERROR';
+export function getSurveyResultsError(error) {
+  return {
+    type: GET_SURVEY_RESULTS_ERROR,
+    error
+  };
+}
+
 export const GET_SURVEY_REQUEST = 'GET_SURVEY_REQUEST';
 export const getSurveyRequest = () => ({
   type: GET_SURVEY_REQUEST
@@ -98,9 +123,29 @@ export function getSurvey(surveyId) {
 }
 
 
-export function postSurveyAnswers(surveyId, userRadixAddress, answers) {
+export function getSurveyResults(surveyId) {
   return async dispatch => {
-    console.debug('postSurveyAnswers() request', { surveyId, userRadixAddress, answers });
+    console.debug('getSurveyResults() request', surveyId);
+    dispatch(getSurveyResultsRequest());
+    
+    try {
+      const response = await request(`${API_ENDPOINT}/api/surveys/${surveyId}/results`, {
+        method: 'GET'
+      });
+      console.debug('getSurveyResults() success', response);
+      dispatch(getSurveyResultsSuccess(response));
+    }
+    catch (error) {
+      console.error('getSurveyResults() error', error);
+      dispatch(getSurveyResultsError(error));
+    }
+  }
+}
+
+
+export function postSurveyAnswers(surveyId, answers) {
+  return async dispatch => {
+    console.debug('postSurveyAnswers() request', { surveyId, answers });
     dispatch(postSurveyAnswersRequest());
     
     try {
@@ -109,7 +154,7 @@ export function postSurveyAnswers(surveyId, userRadixAddress, answers) {
         headers: {
           'Content-Type': 'application/json'
         },
-        body: JSON.stringify({ userRadixAddress, answers })
+        body: JSON.stringify(answers)
       });
       console.debug('postSurveyAnswers() success', response);
       dispatch(postSurveyAnswersSuccess(response));

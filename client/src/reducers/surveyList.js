@@ -83,6 +83,50 @@ const surveys = (state = initialState, action) => {
       });
     }
 
+    
+
+    case Actions.GET_SURVEY_RESULTS_REQUEST: {
+      return update(state, {
+        error: {$set: null},
+        isLoading: {$set: true}
+      });
+    }
+
+    case Actions.GET_SURVEY_RESULTS_SUCCESS: {
+      const { data } = action;
+      
+      if (state.data[data.survey.id]) {
+        return update(state, {
+          error: {$set: null},
+          isLoading: {$set: false},
+          data: {
+            [data.survey.id]: {
+              $merge: {responses: data.responses}
+            }
+          }
+        });
+      }
+      else {
+        const survey = { ...data.survey, responses: data.responses };
+        return update(state, {
+          error: {$set: null},
+          isLoading: {$set: false},
+          data: {
+            $merge: {[data.survey.id]: survey},
+            items: {$push: [data.survey.id]}
+          }
+        });
+      }
+    }
+
+    case Actions.GET_SURVEY_RESULTS_ERROR: {
+      return state;
+      return update(state, {
+        isLoading: {$set: false},
+        error: {$set: action.error}
+      });
+    }
+
     default:
       return state;
   }

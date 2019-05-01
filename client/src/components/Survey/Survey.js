@@ -1,5 +1,6 @@
 import React from 'react';
 import { connect } from 'react-redux';
+import { NavLink } from 'react-router-dom';
 import { Form, Divider, Button, Spin, Input, Radio, Checkbox, Typography } from 'antd';
 import * as SurveyListActions from '../../actions/SurveyListActions';
 import '../../styles/MultilineCode.css';
@@ -19,8 +20,11 @@ class Survey extends React.Component {
     event.preventDefault();
     this.props.form.validateFields((error, values) => {
       if (!error) {
-        const { userRadixAddress, ...answers } = values;
-        this.props.postSurveyAnswers(this.props.survey.id, userRadixAddress, answers);
+        const answers = { answers: { ...values } };
+        if (answers.surveyType !== 'free') {
+          answers.userRadixAddress = values.userRadixAddress;
+        }
+        this.props.postSurveyAnswers(this.props.survey.id, answers);
       }
     });
   }
@@ -35,7 +39,7 @@ class Survey extends React.Component {
   render() {
     const { survey, isLoading, error } = this.props;
     const { getFieldDecorator } = this.props.form;
-
+    
     if (isLoading) {
       return (
         <div>
@@ -55,15 +59,16 @@ class Survey extends React.Component {
       <>
         <Title>{survey.title}</Title>
         <Paragraph>{survey.description}</Paragraph>
-
+        
+        <NavLink to={`${this.props.match.url}/results`}>Show results</NavLink>
         <Divider/>
         <Form layout="vertical" onSubmit={this.handleSubmit}>
 
-          {survey.surveyType === 'free' &&
+          {survey.surveyType !== 'free' &&
             <Form.Item label={<Title level={4} className="no-bottom-margin">Your Radix DLT wallet address</Title>}>
           
             {getFieldDecorator('userRadixAddress', {
-              rules: [{ required: true, message: 'Your Radix DLT address is required' }]
+              rules: [{ required: survey.surveyType !== 'free', message: 'Your Radix DLT address is required' }]
             })(
               <Input placeholder='Address of your Radix DLT wallet address where you want to receive the prize'/>
             )}
@@ -135,11 +140,6 @@ class Survey extends React.Component {
                   style={{ marginTop: '2em', marginLeft: 'auto', marginRight: 'auto', display: 'block' }}>
             Submit answers
           </Button>
-          {/* eslint-disable-next-line  */}
-          <a href="#"
-                  style={{ marginTop: '2em', marginLeft: 'auto', marginRight: 'auto', display: 'block' }}>
-            Show results
-          </a>
           
         </Form>
       </>

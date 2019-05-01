@@ -150,8 +150,6 @@ export const surveyAnswers = {
   "type": "object",
   "additionalProperties": false,
   "required": [
-    "surveyId",
-    "userRadixAddress",
     "answers"
   ],
   "properties": {

@@ -56,7 +56,7 @@ export interface AnswerChoice {
   answerText: string;
 }
 
-export interface Answers extends AppData {
+export interface Response extends AppData {
   surveyId: string;
   userRadixAddress: string;
   answers: {};
