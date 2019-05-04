@@ -64,8 +64,8 @@ function NewSurveyForm(form) {
                 </Radio>
                 <Radio value={ResultsVisibility.PrivateForSale}>
                   <Text>Private and for sale</Text>&nbsp;
-                  <Tooltip title={<><u>You</u> will be able to see the answers with your password and <u>other people</u>
-                                  will be able to buy some of the answers for your specified price</>}>
+                  <Tooltip title={<><u>You</u> will be able to see the answers with your password and <u>other people</u> will
+                    be able to buy some of the answers for your specified price</>}>
                     <Icon type="question-circle-o" />
                   </Tooltip>
                 </Radio>
@@ -106,7 +106,7 @@ function NewSurveyForm(form) {
                 <Radio value="free">
                   <Text>Free</Text>&nbsp;
                   <Tooltip title={<><u>You will not have to pay</u> for the survey to be published
-                  and survey <u>partcipants will not be rewarded</u></>}>
+                    and survey <u>participants will not be rewarded</u></>}>
                     <Icon type="question-circle-o" />
                   </Tooltip>
                 </Radio>
@@ -438,8 +438,8 @@ const randomNAFterMTimeTimeErrorMsg = 'Your survey must last at least 1 hour';
 
 
 const validationSchema = Yup.object().shape({
-  title: Yup.string().trim().required('Your survey must have a title'),
-  description: Yup.string().trim().required('Your survey must have a description'),
+  title: Yup.string().trim().required('Your survey must have a title').max(80),
+  description: Yup.string().trim().required('Your survey must have a description').max(500),
   resultsVisibility: Yup.string().required(),
   resultsPassword: Yup.string()
     .when('resultsVisibility', {

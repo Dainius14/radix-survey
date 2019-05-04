@@ -79,7 +79,7 @@ class Results extends React.Component {
       .filter(x => x !== undefined);
     this.setState({
       questionResponses: questionResponses,
-      chartOptions: survey.questions.map((question) => {
+      chartOptions: survey.questions.map((question, questionIndex) => {
         return {
           chart: {
             height: 300,
@@ -102,9 +102,9 @@ class Results extends React.Component {
           },
           series: [{
             name: question.questionText,
-            data: question.answerChoices.map((choice, index) => ({
+            data: question.answerChoices.map((choice, answerIndex) => ({
               name: choice.answerText,
-              y: questionResponses[index].filter(x => x === index).length,
+              y: questionResponses[questionIndex].filter(x => x === answerIndex).length,
               showInLegend: true,
             })),
             showInLegend: true,
@@ -117,6 +117,9 @@ class Results extends React.Component {
   render() {
     const { chartOptions } = this.state;
     const { survey, isLoading, error } = this.props;
+
+    console.log(survey);
+    console.log(this.state.questionResponses);
 
     if (isLoading || !survey.responses || !chartOptions) {
       return (
@@ -142,29 +145,36 @@ class Results extends React.Component {
 
         {survey.questions.map((question, index) => {
 
-          return (
-            <div key={index}>
-              <Title level={3} className="no-bottom-margin">{question.questionText}</Title>
-              <Text>{this.state.questionResponses[index].length} answers</Text>
-              
+          if (['radio', 'checkbox'].includes(question.type)) {
+            return (
+              <div key={index}>
+                <Title level={3} className="no-bottom-margin">{question.questionText}</Title>
+                <Text>{this.state.questionResponses[index].length} answers</Text>
+                
 
-              <span style={{ float: 'right' }}>
-                <Text style={{ marginRight: '1ch' }}>Chart type</Text>
-                <Radio.Group defaultValue="pie" size="small"
-                  value={this.state.chartOptions[index].chart.type}
-                  onChange={e => this.handleChartTypeChanged(index, e.target.value)}>
-                  <Radio.Button value="pie">Pie</Radio.Button>
-                  <Radio.Button value="column">Column</Radio.Button>
-                </Radio.Group>
-              </span>
-              <div style={{ clear: 'both' }}  /* Fix previous float */>
-                <HighchartsReact
-                  highcharts={Highcharts}
-                  options={this.state.chartOptions[index]}
-                />
+                <span style={{ float: 'right' }}>
+                  <Text style={{ marginRight: '1ch' }}>Chart type</Text>
+                  <Radio.Group defaultValue="pie" size="small"
+                    value={this.state.chartOptions[index].chart.type}
+                    onChange={e => this.handleChartTypeChanged(index, e.target.value)}>
+                    <Radio.Button value="pie">Pie</Radio.Button>
+                    <Radio.Button value="column">Column</Radio.Button>
+                  </Radio.Group>
+                </span>
+                <div style={{ clear: 'both' }}  /* Fix previous float */>
+                  <HighchartsReact
+                    highcharts={Highcharts}
+                    options={this.state.chartOptions[index]}
+                  />
+                </div>
               </div>
-            </div>
-          );
+            );
+          }
+          else {
+            return this.state.questionResponses[index].forEach(response => {
+              return <div>response</div>
+            });
+          }
         })}
       </>
     );

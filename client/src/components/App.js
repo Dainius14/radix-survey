@@ -8,7 +8,7 @@ import Survey from './Survey/Survey';
 import Results from './Survey/Results';
 import SurveyList from './SurveyList/SurveyList';
 import NotFound404 from './NotFound404';
-const { Content, Footer } = Layout;
+const { Content } = Layout;
 
 function App() {
   return (
@@ -29,10 +29,6 @@ function App() {
 
         </div>
       </Content>
-
-      <Footer style={{ textAlign: 'center' }}>
-          Dainelio bakis <span style={{ display: 'inline-block', transform: 'rotate(180deg)' }}>©</span>2019
-      </Footer>
 
       <GitHubCorner href="https://github.com/Dainius14/radix-survey" />
     </Layout>

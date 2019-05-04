@@ -107,8 +107,12 @@ function roundToPrecision(number, precision) {
 
 function AboutPage() {
   return <>
-    <strong>About this page</strong><br/>
-    <Paragraph>This page lets you do surveys for RadixDLT tokens</Paragraph>
+    <strong>About this website</strong><br/>
+    <Paragraph>This website lets you create and participate in surveys. When creating a survey,
+      you can choose to spend some RadixDLT tokens and people get a chance to win them for
+      participating in your survey. <a href="https://www.radixdlt.com/" target="_blank">You can
+      read more about RadixDLT here.</a>
+    </Paragraph>
     <Divider />
   </>;
 }
