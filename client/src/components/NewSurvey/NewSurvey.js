@@ -1,6 +1,6 @@
 import React from 'react';
 import { FormikInput, FormikTextArea, FormikInputPassword, FormikInputNumber, } from './AntField';
-import { Button, Typography, Form as AntForm, InputNumber, Radio, Select, Modal, Tooltip, Icon } from 'antd';
+import { Button, Typography, Form as AntForm, InputNumber, Radio, Select, Modal, Tooltip, Icon, message } from 'antd';
 import { Formik, Form, Field, FastField, FieldArray } from 'formik';
 import * as Yup from 'yup';
 import '../../styles/RequiredAsteriskAfter.css';
@@ -17,16 +17,15 @@ const winnerSelectionRadioStyle = { display: 'block', height: '30px', lineHeight
 const formCategoryStyle = { marginBottom: 0 };
 
 
-function NewSurveyContainer() {
+function NewSurveyContainer({ history }) {
   return (
     <Formik initialValues={initialValues} validationSchema={validationSchema}
-            onSubmit={showConfirm}
-            render={NewSurveyForm}/>
+            onSubmit={(values, form) => showConfirm(values, form, history)}
+            render={formikProps => <NewSurveyForm {...formikProps} history={history} /> }/>
   );
 }
 
-function NewSurveyForm(form) {
-  const { values } = form;
+function NewSurveyForm({ values, ...form }) {
   const firstNDisabled = values.winnerSelection !== WinnerSelection.FirstN;
   const randomNAfterTimeDisabled = values.winnerSelection !== WinnerSelection.RandomNAfterTime;
   return (
@@ -288,7 +287,7 @@ function OnePersonReward({ values }) {
   )
 }
 
-function showConfirm(values, form) {
+function showConfirm(values, form, history) {
   if (!form.errors) {
     Modal.confirm({
       title: 'Do you want to create this survey?',
@@ -296,7 +295,7 @@ function showConfirm(values, form) {
       okText: 'Create',
       cancelText: 'Cancel',
       onOk() {
-        handleSubmit(values, form);
+        handleSubmit(values, form, history);
         
       },
       onCancel() {
@@ -307,7 +306,7 @@ function showConfirm(values, form) {
 }
 
 
-async function handleSubmit(values, form) {
+async function handleSubmit(values, form, history) {
   console.log(values, form)
   // Create cleaned up object to send to server
   const survey = {
@@ -377,32 +376,14 @@ async function handleSubmit(values, form) {
     });
     console.debug('postSurvey() success', response);
     form.setSubmitting(false);
-
-    waitForSurveyId();
+    history.push('/surveys/' + response.id);
+    message.config({ top: 50 });
+    message.success('Survey created successfully!', 5);
   }
   catch (error) {
     console.error('postSurvey() error', error);
     form.setSubmitting(false);
   }
-}
-
-function waitForSurveyId() {
-  const eSrc = new EventSource(window.location.href);
-  eSrc.addEventListener('message', (e) => {
-    console.log(e);
-  }, false);
-  
-  eSrc.addEventListener('open', (e) => {
-    console.log(e);
-    // Connection was opened.
-  }, false);
-  
-  eSrc.addEventListener('error', (e) => {
-    console.log(e);
-    if (e.readyState === EventSource.CLOSED) {
-      // Connection was closed.
-    }
-  }, false);
 }
 
 const initialValues = {

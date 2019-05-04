@@ -143,7 +143,7 @@ export function getSurveyResults(surveyId) {
 }
 
 
-export function postSurveyAnswers(surveyId, answers) {
+export function postSurveyAnswers(surveyId, answers, antMessage) {
   return async dispatch => {
     console.debug('postSurveyAnswers() request', { surveyId, answers });
     dispatch(postSurveyAnswersRequest());
@@ -158,6 +158,8 @@ export function postSurveyAnswers(surveyId, answers) {
       });
       console.debug('postSurveyAnswers() success', response);
       dispatch(postSurveyAnswersSuccess(response));
+      antMessage.config({ top: 50 });
+      antMessage.success('Answers submitted successfully!', 5);
     }
     catch (error) {
       console.error('postSurveyAnswers() error', error);

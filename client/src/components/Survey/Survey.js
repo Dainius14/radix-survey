@@ -1,7 +1,7 @@
 import React from 'react';
 import { connect } from 'react-redux';
 import { NavLink } from 'react-router-dom';
-import { Form, Divider, Button, Spin, Input, Radio, Checkbox, Typography } from 'antd';
+import { Form, Divider, Button, Spin, Input, Radio, Checkbox, Typography, Alert, message } from 'antd';
 import * as SurveyListActions from '../../actions/SurveyListActions';
 import '../../styles/MultilineCode.css';
 import '../../styles/RequiredAsteriskAfter.css';
@@ -24,7 +24,7 @@ class Survey extends React.Component {
         if (answers.surveyType !== 'free') {
           answers.userRadixAddress = values.userRadixAddress;
         }
-        this.props.postSurveyAnswers(this.props.survey.id, answers);
+        this.props.postSurveyAnswers(this.props.survey.id, answers, message);
       }
     });
   }
@@ -40,7 +40,7 @@ class Survey extends React.Component {
     const { survey, isLoading, error } = this.props;
     const { getFieldDecorator } = this.props.form;
     
-    if (isLoading) {
+    if (isLoading || !survey) {
       return (
         <div>
           <Spin style={{ width: '100%' }} spinning={true}/>
@@ -136,7 +136,7 @@ class Survey extends React.Component {
               );
           })}
 
-<Button type="primary" htmlType="submit" loading={this.props.isPostingAnswers}
+          <Button type="primary" htmlType="submit" loading={this.props.isPostingAnswers} 
                   style={{ marginTop: '2em', marginLeft: 'auto', marginRight: 'auto', display: 'block' }}>
             Submit answers
           </Button>
@@ -153,6 +153,7 @@ function mapStateToProps(state, ownProps) {
     isPostingAnswers: state.surveys.isPostingAnswers,
     error: state.surveys.error,
     survey: state.surveys.data[ownProps.match.params.surveyId],
+    answersSubmitted: state.answersSubmitted,
     match: ownProps.match
   }
 }
@@ -161,8 +162,8 @@ function mapDispatchToProps(dispatch) {
   return {
     getSurvey: (surveyId) => 
       dispatch(SurveyListActions.getSurvey(surveyId)),
-    postSurveyAnswers: (surveyId, radixAddress, answers) =>
-      dispatch(SurveyListActions.postSurveyAnswers(surveyId, radixAddress, answers))
+    postSurveyAnswers: (surveyId, answers, antMessage) =>
+      dispatch(SurveyListActions.postSurveyAnswers(surveyId, answers, antMessage))
   }
 };
 

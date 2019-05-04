@@ -77,6 +77,8 @@ RadixLogger.setLevel('warn'); // Available levels: trace/debug/info/warn/error
 let identity: RadixSimpleIdentity;
 let account: RadixAccount;
 
+const surveysWaitingForId: any = {};
+
 RadixKeyStore.decryptKey(key, process.env.KEY_PASSWORD as string)
   .then((keyPair) => {
     identity = new RadixSimpleIdentity(keyPair);
@@ -128,6 +130,14 @@ RadixKeyStore.decryptKey(key, process.env.KEY_PASSWORD as string)
           const data = item.data;
           const payload: Payload = JSON.parse(data.payload);
           logger.info(`Received new ${payload.type} (created at: ${payload.data.created}). Radix ID: ${data.hid}.`);
+
+          const waitingResponse = surveysWaitingForId[payload.data.created];
+          if (waitingResponse && waitingResponse.title === (payload.data as Survey).title) {
+            logger.info('Found request waiting for response');
+            waitingResponse.res.send({ id: data.hid });
+            waitingResponse.next();
+            delete surveysWaitingForId[payload.data.created];
+          }
         },
         error: error => logger.error('Error observing application data: ' + JSON.stringify(error, null, 2))
       });
@@ -215,9 +225,13 @@ server.post('/api/surveys', (req, res, next) => {
       break;
   }
 
-  res.status(204);
-  res.send();
-  return next();
+  surveysWaitingForId[survey.created] = {
+    created: survey.created,
+    title: survey.title,
+    res: res,
+    req: req,
+    next: next
+  }
 });
 
 
