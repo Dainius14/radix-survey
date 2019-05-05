@@ -18,6 +18,7 @@ export interface Survey extends AppData {
   description: string;
   resultsVisibility: ResultsVisibility;
   resultsPassword: string;
+  resultsPasswordHashed: string;
   resultsPrice: number;
   surveyType: SurveyType;
   winnerSelection: WinnerSelection;

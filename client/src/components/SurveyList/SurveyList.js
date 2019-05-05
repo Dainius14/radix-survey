@@ -96,6 +96,8 @@ function getRewardForUser(survey) {
     case WinnerSelection.RandomNAfterMParticipants:
       reward = roundToPrecision(survey.totalReward / survey.firstNCount, 2);
       break;
+    default:
+      break;
   }
 
   return reward + ' Rads';
@@ -110,7 +112,7 @@ function AboutPage() {
     <strong>About this website</strong><br/>
     <Paragraph>This website lets you create and participate in surveys. When creating a survey,
       you can choose to spend some RadixDLT tokens and people get a chance to win them for
-      participating in your survey. <a href="https://www.radixdlt.com/" target="_blank">You can
+      participating in your survey. <a href="https://www.radixdlt.com/" target="_blank" rel="noopener noreferrer">You can
       read more about RadixDLT here.</a>
     </Paragraph>
     <Divider />

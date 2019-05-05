@@ -1,38 +1,23 @@
 import React from 'react';
 import { connect } from 'react-redux';
-import { Divider, Button, Spin, Input, Typography, Statistic, Radio } from 'antd';
+import { Spin, Input, Typography, Statistic, Radio, Modal, Form } from 'antd';
 import * as SurveyListActions from '../../actions/SurveyListActions';
 import Highcharts from 'highcharts'
 import HighchartsReact from 'highcharts-react-official'
 import '../../styles/RequiredAsteriskAfter.css';
 import '../../styles/NoBottomMargin.css';
-const { Title, Paragraph, Text } = Typography;
-
-// const chartOptions = {
-//   plotOptions: {
-//     pie: {
-//       legend: {
-//         enabled: true
-//       }
-//     },
-//     column: {
-//       legend: {
-//         enabled: false
-//       }
-//     }
-//   }
-// };
+const { Title, Text } = Typography;
 
 
 class Results extends React.Component {
   constructor() {
     super();
-
     this.state = {
       chartOptions: undefined,
       questionResponses: undefined
     }
   }
+
   componentDidMount() {
     const { match, getSurveyResults } = this.props;
     getSurveyResults(match.params.surveyId);
@@ -64,7 +49,7 @@ class Results extends React.Component {
   }
 
   componentDidUpdate() {
-    if (this.props.survey.responses && !this.state.chartOptions) {
+    if (this.props.survey && this.props.survey.responses && !this.state.chartOptions) {
       this.setupCharts();
     }
   }
@@ -114,18 +99,43 @@ class Results extends React.Component {
       });
   }
 
+  savePasswordFormRef = (formRef) => {
+    this.passwordFormRef = formRef;
+  }
+
+  handlePasswordCancel = () => {
+    this.props.closePasswordDialog();
+    this.props.history.push('/surveys/' + this.props.match.params.surveyId);
+  }
+
+  handlePasswordSubmit = () => {
+    const form = this.passwordFormRef.props.form;
+    form.validateFields((err, values) => {
+      if (err) {
+        return;
+      }
+      form.resetFields();
+      console.log(values)
+      this.props.closePasswordDialog();
+      this.props.getSurveyResults(this.props.match.params.surveyId, values.password);
+    });
+  }
+
   render() {
     const { chartOptions } = this.state;
-    const { survey, isLoading, error } = this.props;
+    const { survey, isLoading, error, needPassword } = this.props;
 
-    console.log(survey);
-    console.log(this.state.questionResponses);
-
-    if (isLoading || !survey.responses || !chartOptions) {
+    if (isLoading || (survey && !survey.responses) || !chartOptions) {
       return (
-        <div>
-          <Spin style={{ width: '100%' }} spinning={true}/>
-        </div>
+        <>
+          <Spin style={{ width: '100%', display: 'block' }} spinning={true} />
+          <PasswordForm
+            wrappedComponentRef={this.savePasswordFormRef}
+            visible={needPassword}
+            onSubmit={this.handlePasswordSubmit}
+            onCancel={this.handlePasswordCancel}
+            />
+        </>
       );
     }
 
@@ -134,6 +144,7 @@ class Results extends React.Component {
         <Text code className="multiline-code">{JSON.stringify(error, null, 4)}</Text>
       );
     }
+
 
     // Got results, can render them
     return (
@@ -181,19 +192,50 @@ class Results extends React.Component {
   }
 }
 
+const PasswordForm = Form.create({ name: 'password_form' })(
+  // eslint-disable-next-line
+  class extends React.Component {
+    render() {
+      const { visible, onCancel, onSubmit, form, survey } = this.props;
+      const { getFieldDecorator } = form;
+      return (
+        <Modal
+          visible={visible}
+          title="Please enter a password to view survey results"
+          okText="Submit"
+          onCancel={onCancel}
+          onOk={onSubmit}
+        >
+          <Form layout="vertical">
+            <Form.Item label="Password">
+              {getFieldDecorator('password', {
+                rules: [{ required: true, message: 'Please input a password!' }],
+              })(
+                <Input.Password onKeyDown={(e)=> e.keyCode == 13 && onSubmit()} />
+              )}
+            </Form.Item>
+          </Form>
+        </Modal>
+      );
+    }
+  }
+);
 function mapStateToProps(state, ownProps) {
   return {
     isLoading: state.surveys.isLoading,
     error: state.surveys.error,
     survey: state.surveys.data[ownProps.match.params.surveyId],
-    match: ownProps.match
+    match: ownProps.match,
+    needPassword: state.surveys.needPassword
   }
 }
 
 function mapDispatchToProps(dispatch) {
   return {
-    getSurveyResults: (surveyId) => 
-      dispatch(SurveyListActions.getSurveyResults(surveyId))
+    getSurveyResults: (surveyId, password) => 
+      dispatch(SurveyListActions.getSurveyResults(surveyId, password)),
+    closePasswordDialog: () =>
+      dispatch(SurveyListActions.closePasswordDialog())
   }
 };
 

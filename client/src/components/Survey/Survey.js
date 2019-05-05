@@ -1,7 +1,7 @@
 import React from 'react';
 import { connect } from 'react-redux';
 import { NavLink } from 'react-router-dom';
-import { Form, Divider, Button, Spin, Input, Radio, Checkbox, Typography, Alert, message } from 'antd';
+import { Form, Divider, Button, Spin, Input, Radio, Checkbox, Typography, message } from 'antd';
 import * as SurveyListActions from '../../actions/SurveyListActions';
 import '../../styles/MultilineCode.css';
 import '../../styles/RequiredAsteriskAfter.css';

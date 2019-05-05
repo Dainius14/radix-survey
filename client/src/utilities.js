@@ -18,10 +18,12 @@ function parseJSON(response) {
 
   return new Promise((resolve) => response.json()
     .then((json) => resolve({
-      status: response.status,
-      ok: response.ok,
-      json,
-    })));
+        status: response.status,
+        ok: response.ok,
+        json
+      })
+    )
+  );
 }
 
 /**
@@ -40,8 +42,15 @@ export function request(url, options) {
         if (response.ok) {
           return resolve(response.json || null);
         }
+        // Sometimes error message might be a json, sometimes not
+        let errorMsg = response.json.message
+        try {
+          errorMsg = JSON.parse(errorMsg);
+        }
+        catch {}
+
         // extract the error from the server's json
-        return reject({ code: response.json.code, message: JSON.parse(response.json.message) });
+        return reject({ status: response.status, code: response.json.code, message: errorMsg });
       })
       .catch((error) => reject({
         networkError: error.message,

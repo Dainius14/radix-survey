@@ -6,6 +6,7 @@ const initialState = {
   isPostingAnswers: false,
   allLoaded: false,
   error: null,
+  needPasword: false,
   data: {
     items: []
   }
@@ -119,11 +120,24 @@ const surveys = (state = initialState, action) => {
       }
     }
 
+    case Actions.GET_SURVEY_RESULTS_NEED_PASSWORD: {
+      return update(state, {
+        needPassword: {$set: true},
+        isLoading: {$set: false},
+      });
+    }
+
     case Actions.GET_SURVEY_RESULTS_ERROR: {
       return state;
       return update(state, {
         isLoading: {$set: false},
         error: {$set: action.error}
+      });
+    }
+
+    case Actions.CLOSE_PASSWORD_DIALOG: {
+      return update(state, {
+        needPassword: {$set: false}
       });
     }
 

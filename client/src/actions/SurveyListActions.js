@@ -1,5 +1,12 @@
 import { request } from '../utilities';
 
+export const CLOSE_PASSWORD_DIALOG = 'CLOSE_PASSWORD_DIALOG';
+export function closePasswordDialog() {
+  return {
+    type: CLOSE_PASSWORD_DIALOG
+  };
+}
+
 export const GET_SURVEYS_REQUEST = 'GET_SURVEYS_REQUEST';
 export function getSurveysRequest() {
   return {
@@ -39,7 +46,6 @@ export function getSurveyResultsSuccess(data) {
   };
 }
 
-
 export const GET_SURVEY_RESULTS_ERROR = 'GET_SURVEYS_RESULTS_ERROR';
 export function getSurveyResultsError(error) {
   return {
@@ -47,6 +53,14 @@ export function getSurveyResultsError(error) {
     error
   };
 }
+
+export const GET_SURVEY_RESULTS_NEED_PASSWORD = 'GET_SURVEY_RESULTS_NEED_PASSWORD';
+export function getSurveyResultsNeedPassword() {
+  return {
+    type: GET_SURVEY_RESULTS_NEED_PASSWORD
+  };
+}
+
 
 export const GET_SURVEY_REQUEST = 'GET_SURVEY_REQUEST';
 export const getSurveyRequest = () => ({
@@ -75,11 +89,13 @@ export const postSurveyAnswersSuccess = (data) => ({
   type: POST_SURVEY_ANSWERS_SUCCESS,
   data
 });
+
 export const POST_SURVEY_ANSWERS_ERROR = 'POST_SURVEY_ANSWERS_ERROR';
 export const postSurveyAnswersError = (error) => ({
   type: POST_SURVEY_ANSWERS_ERROR,
   error
 });
+
 
 const API_ENDPOINT = process.env.REACT_APP_API_ENDPOINT || window.location.origin;
 
@@ -123,19 +139,27 @@ export function getSurvey(surveyId) {
 }
 
 
-export function getSurveyResults(surveyId) {
+export function getSurveyResults(surveyId, password) {
   return async dispatch => {
     console.debug('getSurveyResults() request', surveyId);
     dispatch(getSurveyResultsRequest());
     
     try {
       const response = await request(`${API_ENDPOINT}/api/surveys/${surveyId}/results`, {
-        method: 'GET'
+        method: 'GET',
+        headers: {
+          'Authorization': password || ''
+        }
       });
       console.debug('getSurveyResults() success', response);
       dispatch(getSurveyResultsSuccess(response));
     }
     catch (error) {
+      if (error.status === 401) {
+        console.debug('getSurveyResults() Unauthorized')
+        dispatch(getSurveyResultsNeedPassword());
+        return;
+      }
       console.error('getSurveyResults() error', error);
       dispatch(getSurveyResultsError(error));
     }

@@ -11,7 +11,9 @@
   "author": "Dainius Dauksevicius",
   "license": "MIT",
   "dependencies": {
+    "@types/bcrypt": "^3.0.0",
     "ajv": "^6.10.0",
+    "bcrypt": "^3.0.6",
     "dotenv": "^7.0.0",
     "radixdlt": "^1.0.7-alpha",
     "restify": "^8.0",

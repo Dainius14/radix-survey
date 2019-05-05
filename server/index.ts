@@ -1,5 +1,6 @@
 import restify from 'restify';
 import errors from 'restify-errors';
+import bcrypt from 'bcrypt';
 import { radixUniverse, RadixUniverse, RadixLogger, RadixKeyStore, RadixSimpleIdentity, RadixAtom, RadixTransactionBuilder, RadixNEDBAtomCache, radixTokenManager, RadixAccount, RadixApplicationData } from 'radixdlt';
 import Ajv from 'ajv';
 import { filter as rxFilter } from 'rxjs/operators';
@@ -7,7 +8,7 @@ import winston, { format } from 'winston';
 
 import key from './key.json';
 import { newSurvey, surveyAnswers } from './jsonSchemas';
-import { random } from './utils';
+import { random, hashPassword } from './utils';
 import { Survey, Response, AppData, Payload, AppDataType, SurveyType, WinnerSelection, ResultsVisibility } from './types';
 import { TSMap } from 'typescript-map';
 import { info } from 'verror';
@@ -45,7 +46,7 @@ if (process.env.NODE_ENV != 'production') {
 
 
   const corsMiddleware = require('restify-cors-middleware');
-  const cors = corsMiddleware({ allowHeaders: ['Content-Type'] });
+  const cors = corsMiddleware({ allowHeaders: ['Content-Type', 'Authorization'] });
   server.pre(cors.preflight);
   server.use(cors.actual);
 
@@ -170,11 +171,10 @@ server.get('/api/surveys', (req, res, next) => {
  */
 server.get('/api/surveys/:survey_id', (req, res, next) => {
   const survey = findSurvey(req.params.survey_id);
-
   if (!survey) {
     return next(new errors.NotFoundError());
   }
-
+  delete survey.resultsPasswordHashed;
   res.send(survey);
   return next();
 });
@@ -193,6 +193,14 @@ server.get('/api/surveys/:survey_id/results', (req, res, next) => {
     const response = { survey, responses: getSurveyResponses(req.params.survey_id)};
     res.send(response);
   }
+  else if (bcrypt.compareSync(req.headers.authorization, survey.resultsPasswordHashed)) {
+    delete survey.resultsPasswordHashed;
+    const response = { survey, responses: getSurveyResponses(req.params.survey_id)};
+    res.send(response);
+  }
+  else {
+    return next(new errors.UnauthorizedError());
+  }
 
   res.status(200);
   return next();
@@ -210,13 +218,19 @@ server.post('/api/surveys', (req, res, next) => {
   }
 
   const survey: Survey = { ...req.body, created: new Date().getTime() };
+  
+  if (survey.resultsVisibility !== ResultsVisibility.Public) {
+    survey.resultsPasswordHashed = bcrypt.hashSync(survey.resultsPassword, 5);
+    delete survey.resultsPassword;
+  }
+
   switch (survey.surveyType) {
     case SurveyType.Free: {
       submitSurveyToRadix(survey);
       break;
     }
     case SurveyType.Paid: {
-      waitingSurveys.push(survey);
+
       logger.info(`Added survey (created at: ${survey.created}) to waiting list. ` + 
         `Waiting for a transaction of ${survey.totalReward} ${(radixToken as any).label}`);
       break;
