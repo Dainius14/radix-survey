@@ -6,7 +6,8 @@ import * as SurveyListActions from '../../actions/SurveyListActions';
 import '../../styles/MultilineCode.css';
 import '../../styles/RequiredAsteriskAfter.css';
 import '../../styles/NoBottomMargin.css';
-import { SurveyType } from '../../constants';
+import { PageHeader, DescriptionItem } from '../PageHeader';
+import { SurveyType, ResultsVisibility } from '../../constants';
 const { TextArea } = Input;
 const { Title, Paragraph, Text } = Typography;
 
@@ -73,11 +74,22 @@ class Survey extends React.Component {
     // Got survey, can render it
     return (
       <>
-        <Title>{survey.title}</Title>
-        <Paragraph>{survey.description}</Paragraph>
+        <PageHeader
+          title={survey.title}
+          subTitle="Survey"
+          onBack={() => this.props.history.push('/surveys')}
+          bottomLeftActions={
+            <Button onClick={() => this.props.history.push(`${this.props.match.url}/results`)}
+              icon="pie-chart">
+              {`Show results ${survey.resultsVisibility !== ResultsVisibility.Public ? '(private)' : ''}`}
+            </Button>
+          }
+          >
+
+          <Paragraph>{survey.description}</Paragraph>
+          
+        </PageHeader>
         
-        <NavLink to={`${this.props.match.url}/results`}>Show results</NavLink>
-        <Divider/>
         <Form layout="vertical" onSubmit={this.handleSubmit}>
 
           {survey.surveyType === SurveyType.Paid &&

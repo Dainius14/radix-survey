@@ -1,12 +1,12 @@
 import React from 'react';
 import { connect } from 'react-redux';
-import { Spin, Input, Typography, Statistic, Radio, Modal, Form, Table as AntTable, PageHeader, Button, Row, Col } from 'antd';
+import { Spin, Input, Typography, Statistic, Radio, Modal, Form, Table as AntTable, Button, Row, Col } from 'antd';
 import * as SurveyListActions from '../../actions/SurveyListActions';
 import Highcharts from 'highcharts'
 import HighchartsReact from 'highcharts-react-official'
 import '../../styles/RequiredAsteriskAfter.css';
 import '../../styles/NoBottomMargin.css';
-import '../../styles/PageHeader.css';
+import { PageHeader, DescriptionItem } from '../PageHeader';
 import { format as formatDate } from 'timeago.js';
 const { Title, Text } = Typography;
 
@@ -122,7 +122,7 @@ class Results extends React.Component {
           const questionAnswer = response.answers[i];
           
           if (typeof questionAnswer === 'undefined') {
-            data[i] = null;
+            data[i] = '';
             continue;
           }
 
@@ -164,6 +164,29 @@ class Results extends React.Component {
     });
   }
 
+  handleDownloadResults = () => {
+    let csvContent = "data:text/csv;charset=utf-8,";
+
+    const columns = this.state.tableView.columns.filter(x => x.dataIndex !== '_number' && x.dataIndex !== 'key').map(x => x.dataIndex);
+    csvContent += this.state.tableView.columns.filter(x => x.dataIndex !== '_number' && x.dataIndex !== 'key')
+      .map(x => `"${x.title.replace(/"/g, '""')}"`).join(',') + '\n';
+    csvContent += this.state.tableView.data.map(row => {
+      return columns.map((col) => {
+        let value = row[col];
+        if (col === '_date') {
+          value = row[col].split('\n')[0]
+        }
+        return `"${value.replace(/"/g, '""')}"`;
+      }).join(',')
+    }).join('\n');
+
+    var anchor = document.createElement('a');
+    anchor.href = csvContent;
+    anchor.target = '_blank';
+    anchor.download = this.props.survey.title.toLowerCase().replace(/ /g, '_') + '.csv';
+    anchor.click();
+  }
+
   handleChartTypeChanged = (questionId, newType) => {
     const chartOptions = [ ...this.state.chartOptions ];
     chartOptions[questionId] = { 
@@ -188,8 +211,16 @@ class Results extends React.Component {
     const pageHeader = survey ? <PageHeader
         title={survey.title}
         subTitle="Results"
-        className="custom-header"
         onBack={() => this.props.history.push(`/surveys/${this.props.match.params.surveyId}`)}
+        bottomLeftActions={
+          <Radio.Group key="0" defaultValue="summary" buttonStyle="solid"
+            onChange={(e) => this.setState({ resultsView: e.target.value })}>
+            <Radio.Button value="summary" icon="ordered-list">Summary</Radio.Button>
+            <Radio.Button value="table">Table</Radio.Button>
+          </Radio.Group>}
+        bottomRightActions={
+          <Button key="1" icon="download" onClick={this.handleDownloadResults}>Download responses (.csv)</Button>
+        }
         >
         <div style={{ display: 'flex' }}>
           <div style={{ flex: 1 }}>
@@ -203,19 +234,11 @@ class Results extends React.Component {
           <div>
             <Row>
               <Col span={24}>
-                <Statistic title="Total responses" value={survey.responses.length} />
+                <Statistic title="Total responses" value={survey.responses ? survey.responses.length : ''} />
               </Col>
               
             </Row>
           </div>
-        </div>
-        <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-          <Radio.Group key="0" defaultValue="summary" buttonStyle="solid"
-            onChange={(e) => this.setState({ resultsView: e.target.value })}>
-            <Radio.Button value="summary" icon="ordered-list">Summary</Radio.Button>
-            <Radio.Button value="table">Table</Radio.Button>
-          </Radio.Group>
-          <Button key="1" icon="download">Download responses (.csv)</Button>
         </div>
       </PageHeader> : null;
 
@@ -339,12 +362,6 @@ const PasswordForm = Form.create({ name: 'password_form' })(
   }
 );
 
-const DescriptionItem = React.memo(({ label, children }) => (
-  <Col className="description-item" span={12}>
-    <span className="description-item-label">{label}</span>
-    <span className="description-item-value">{children}</span>
-  </Col>
-));
 
 function mapStateToProps(state, ownProps) {
   return {
