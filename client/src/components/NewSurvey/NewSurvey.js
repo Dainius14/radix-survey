@@ -5,8 +5,9 @@ import { Formik, Form, Field, FastField, FieldArray } from 'formik';
 import * as Yup from 'yup';
 import '../../styles/RequiredAsteriskAfter.css';
 import '../../styles/AntFormItemLabelHeight.css';
+import '../../styles/AntFormItemNoBottomMargin.css';
 import QuestionList from './QuestionList';
-import { WinnerSelection, ResultsVisibility } from '../../constants';
+import { WinnerSelection, ResultsVisibility, SurveyVisibility, SurveyType } from '../../constants';
 import { request } from '../../utilities';
 const { Text, Paragraph, Title } = Typography;
 const { Option } = Select;
@@ -26,8 +27,10 @@ function NewSurveyContainer({ history }) {
 }
 
 function NewSurveyForm({ values, ...form }) {
+  console.debug('Errors', form.errors)
   const firstNDisabled = values.winnerSelection !== WinnerSelection.FirstN;
   const randomNAfterTimeDisabled = values.winnerSelection !== WinnerSelection.RandomNAfterTime;
+  const randomNAfterMParticipantsDisabled = values.winnerSelection !== WinnerSelection.RandomNAfterMParticipants;
   return (
     <Form className="form-container">
       
@@ -39,13 +42,38 @@ function NewSurveyForm({ values, ...form }) {
       <FastField component={FormikTextArea} name="description" label="Description" required
         placeholder="Description of your survey" type="text" />
 
+      <Title level={4} style={formCategoryStyle}>Survey options</Title>
 
-      <Title level={4} style={formCategoryStyle}>Results visibility</Title>
+      <Field name="surveyVisibility">
+        {({ field, form }) => {
+          return (
+            <AntForm.Item label="Survey visibility" className="form-item-required form-item-no-bottom-margin">
+              <Radio.Group value={field.value}
+                onChange={e => { form.setFieldValue(field.name, e.target.value); form.setFieldTouched(field.name, true); }}>
+
+                <Radio value={SurveyVisibility.Public}>
+                  <Text>Public</Text>&nbsp;
+                  <Tooltip title={<><u>Everyone</u> will be able to see the survey in survey list and participate in it</>}>
+                    <Icon type="question-circle-o" />
+                  </Tooltip>
+                </Radio>
+                <Radio value={SurveyVisibility.Private}>
+                  <Text>Private</Text>&nbsp;
+                    <Tooltip title={<><u>Only people with a link</u> to the survey will able to see the survey and participate in it</>}>
+                    <Icon type="question-circle-o" />
+                  </Tooltip>
+                </Radio>
+
+              </Radio.Group>
+            </AntForm.Item>
+          );
+        }}
+      </Field>
 
       <Field name="resultsVisibility">
         {({ field, form }) => {
           return (
-            <AntForm.Item label="Results visibility" className="form-item-required">
+            <AntForm.Item label="Results visibility" className="form-item-required form-item-no-bottom-margin">
               <Radio.Group value={field.value}
                 onChange={e => { form.setFieldValue(field.name, e.target.value); form.setFieldTouched(field.name, true); }}>
 
@@ -81,7 +109,7 @@ function NewSurveyForm({ values, ...form }) {
             placeholder="Password to access results of your survey" type="password" />
 
           {values.resultsVisibility === ResultsVisibility.PrivateForSale &&
-            <FastField component={FormikInputNumber} name="resultsPrice"
+            <FastField component={FormikInputNumber} name="resultPrice"
               label={<>
                 <Text>Price for one answer</Text>&nbsp;
                 <Tooltip title="This is the price the person buying answers of your survey will pay for one answer">
@@ -92,13 +120,10 @@ function NewSurveyForm({ values, ...form }) {
         </>
       }
 
-      
-      <Title level={4} style={formCategoryStyle}>Survey options</Title>
-
       <Field name="surveyType">
         {({ field, form }) => {
           return (
-            <AntForm.Item label="Survey type" className="form-item-required">
+            <AntForm.Item label="Survey type" className="form-item-required form-item-no-bottom-margin">
               <Radio.Group value={field.value}
                 onChange={e => { form.setFieldValue(field.name, e.target.value); form.setFieldTouched(field.name, true); }}>
 
@@ -129,13 +154,14 @@ function NewSurveyForm({ values, ...form }) {
       {values.surveyType === 'paid' &&
         // Paid survey related stuff
         <>
+          <Title level={4} style={formCategoryStyle}>Paid survey options</Title>
           <Field name="winnerSelection">
             {({ field, form }) => {
               return (
                 <AntForm.Item label="Winner selection"
                               className="form-item-required"
                               help={winnerSelectionHelpText(form)}
-                              validateStatus={getGroupValidateStatus(form, ['firstNCount', 'randomNAfterTimeCount', 'randomNAfterTimeLength'])}>
+                              validateStatus={getGroupValidateStatus(form, ['firstNCount', 'randomNAfterTimeCount', 'randomNAfterTimeLength', 'randomNAfterMNCount', 'randomNAfterMMCount'])}>
                   <Radio.Group name="winnerSelection" value={field.value}
                                onChange={e => { form.setFieldValue(field.name, e.target.value); form.setFieldTouched(field.name, true); }}>
 
@@ -154,6 +180,38 @@ function NewSurveyForm({ values, ...form }) {
                         }}
                       </Field>
                       <Text>to submit answers</Text>
+                    </Radio>
+
+                    <Radio value={WinnerSelection.RandomNAfterMParticipants} style={winnerSelectionRadioStyle}>
+                      <Text>Randomly selected</Text>
+
+                      <Field name="randomNAfterMNCount">
+                        {({ field, form }) => {
+                          return (
+                            <InputNumber name={field.name} size="small" style={{ marginLeft: '1ch', marginRight: '1ch', width: '8ch' }}
+                              value={field.value}
+                              onChange={v => { form.setFieldValue(field.name, v); form.setFieldTouched(field.name, true); }}
+                              onBlur={() => form.setFieldTouched(field.name, true)}
+                              disabled={randomNAfterMParticipantsDisabled}/>
+                          );
+                        }}
+                      </Field>
+
+                      <Text>people after</Text>
+                      
+                      <Field name="randomNAfterMMCount">
+                        {({ field, form }) => {
+                          return (
+                            <InputNumber name={field.name} size="small" style={{ marginLeft: '1ch', marginRight: '1ch', width: '8ch' }}
+                              value={field.value}
+                              onChange={v => { form.setFieldValue(field.name, v); form.setFieldTouched(field.name, true); }}
+                              onBlur={() => form.setFieldTouched(field.name, true)}
+                              disabled={randomNAfterMParticipantsDisabled}/>
+                          );
+                        }}
+                      </Field>
+                      
+                      <Text>total answers are submitted</Text>
                     </Radio>
 
                     <Radio value={WinnerSelection.RandomNAfterTime} style={winnerSelectionRadioStyle}>
@@ -189,6 +247,8 @@ function NewSurveyForm({ values, ...form }) {
                         {({ field, form }) => {
                           return (
                             <Select name={field.name} value={field.value} size="small" style={{ width: '11ch' }}
+                                    onChange={v => { form.setFieldValue(field.name, v); form.setFieldTouched(field.name, true); }}
+                                    onBlur={() => form.setFieldTouched(field.name, true)}
                                     disabled={randomNAfterTimeDisabled}>
                               <Option value="hours">Hours</Option>
                               <Option value="days">Days</Option>
@@ -261,7 +321,15 @@ function winnerSelectionHelpText({ errors, touched, values }) {
         return acc;
       }, '');
     }
-    case WinnerSelection.RandomNAfterMParticipants:
+    case WinnerSelection.RandomNAfterMParticipants: {
+      const fields = ['randomNAfterMNCount', 'randomNAfterMMCount'];
+      return fields.reduce((acc, field) => {
+        const error = errors[field] && touched[field] ? errors[field] : '';
+        if (error)
+          return acc ? acc + ' and ' + error[0].toLowerCase() + error.substr(1) : error;
+        return acc;
+      }, '');
+    }
     default: {
       break;
     }
@@ -288,21 +356,19 @@ function OnePersonReward({ values }) {
 }
 
 function showConfirm(values, form, history) {
-  if (!form.errors) {
-    Modal.confirm({
-      title: 'Do you want to create this survey?',
-      content: 'Once you create the survey - there\'s no way back. Surveys are not editable. Double check if everything is correct.',
-      okText: 'Create',
-      cancelText: 'Cancel',
-      onOk() {
-        handleSubmit(values, form, history);
-        
-      },
-      onCancel() {
-        form.setSubmitting(false);
-      }
-    });
-  }
+  Modal.confirm({
+    title: 'Do you want to create this survey?',
+    content: 'Once you create the survey - there\'s no way back. Surveys are not editable. Double check if everything is correct.',
+    okText: 'Create',
+    cancelText: 'Cancel',
+    onOk() {
+      handleSubmit(values, form, history);
+      
+    },
+    onCancel() {
+      form.setSubmitting(false);
+    }
+  });
 }
 
 
@@ -312,7 +378,7 @@ async function handleSubmit(values, form, history) {
   const survey = {
     title: values.title,
     description: values.description,
-    surveyType: values.surveyType,
+    surveyVisibility: values.surveyVisibility,
     resultsVisibility: values.resultsVisibility,
   }
 
@@ -320,29 +386,38 @@ async function handleSubmit(values, form, history) {
     survey.resultsPassword = values.resultsPassword;
 
     if (values.resultsVisibility === ResultsVisibility.PrivateForSale) {
-      survey.resultsPrice = values.resultsPrice;
+      survey.resultPrice = values.resultPrice;
     }
   }
 
-  if (values.surveyType === 'paid') {
+  if (values.surveyType === SurveyType.Paid) {
     survey.winnerSelection = values.winnerSelection;
     survey.radixAddress = values.radixAddress;
     survey.totalReward = values.totalReward;
+
     switch (values.winnerSelection) {
+
       case WinnerSelection.FirstN:
-        survey.firstNCount = values.firstNCount;
+        survey.winnerCount = values.firstNCount;
         break;
+
       case WinnerSelection.RandomNAfterTime:
-        survey.randomNAfterTimeCount = values.randomNAfterTimeCount;
-        survey.randomNAfterTimeLength = values.randomNAfterTimeLength;
-        survey.randomNAfterTimeUnits = values.randomNAfterTimeUnits;
+        survey.winnerCount = values.randomNAfterTimeCount;
+        survey.winnerSelectionTimeLength = values.randomNAfterTimeLength;
+        survey.winnerSelectionTimeUnits = values.randomNAfterTimeUnits;
         break;
+
       case WinnerSelection.RandomNAfterMParticipants:
-        
+        survey.winnerCount = values.randomNAfterMNCount;
+        survey.requiredParticipantCount = values.randomNAfterMMCount;
         break;
+
       default:
         break;
     }
+  }
+  else if (values.surveyType === SurveyType.Free){
+    survey.winnerSelection = values.surveyType;
   }
 
   // Filter out undefined questions
@@ -389,16 +464,22 @@ async function handleSubmit(values, form, history) {
 const initialValues = {
   title: '',
   description: '',
+  
+  surveyVisibility: 'public',
+
   surveyType: 'free',
 
   resultsVisibility: ResultsVisibility.Public,
   resultsPassword: '',
-  resultsPrice: 0,
+  resultPrice: 0,
 
   winnerSelection: WinnerSelection.FirstN,
   
   firstNCount: 0,
   
+  randomNAfterMNCount: 0,
+  randomNAfterMMCount: 0,
+
   randomNAfterTimeCount: 0,
   randomNAfterTimeLength: 0,
   randomNAfterTimeUnits: 'hours',
@@ -413,83 +494,94 @@ const questionValidationSchema = Yup.object().shape({
   questionText: Yup.string().trim().required('Write text for the question or delete the question')
 });
 
-const winnerCountErrorMsg = 'Your survey must have at least 1 winner';
-const winnerCountNotIntErrorMsg = 'There can be only an even number of winners';
-const randomNAFterMTimeTimeErrorMsg = 'Your survey must last at least 1 hour';
+const winnerCountTypeErrorMsg = 'Winner count must be a positive whole number';
+const winnerCountRequiredErrorMsg = 'Winner count is required';
+const winnerCountMinErrorMsg = 'There must be at least ${min} winner';
+const winnerCountMaxErrorMsg = 'There cannot be more than ${max} winners';
+const winnerCountNotIntErrorMsg = 'There can be only a whole number of winners';
+
+const requiredParticipantCountRequiredErrorMsg = 'Required participant count is required';
+const requiredParticipantCountMinErrorMsg = 'There must be at least ${min} required participant';
+const requiredParticipantCountMaxErrorMsg = 'There cannot be more than ${max} required participants';
+const requiredParticipantCountNotIntErrorMsg = 'There can be only a whole number of required participant';
+
+const randomNAFterMTimeTimeRequiredErrorMsg = 'Winner selection time is required';
+const randomNAFterMTimeTimeMinErrorMsg = 'Winner selection time must last at least 1 hour';
+const randomNAFterMTimeTimeMaxErrorMsg = 'Winner selection time cannot last more than ${max} ${units}';
+const randomNAFterMTimeTimeNotIntErrorMsg = 'Winner selection time must be a whole number';
 
 
 const validationSchema = Yup.object().shape({
   title: Yup.string().trim().required('Your survey must have a title').max(80),
   description: Yup.string().trim().required('Your survey must have a description').max(500),
-  resultsVisibility: Yup.string().required(),
-  resultsPassword: Yup.string()
-    .when('resultsVisibility', {
-      is: ResultsVisibility.Public,
-      then: Yup.string().notRequired(),
-      otherwise: Yup.string().required('Enter a password or make results public')
-    }),
-  resultsPrice: Yup.number()
-    .when('resultsVisibility', {
-      is: ResultsVisibility.PrivateForSale,
-      then: Yup.number().required('Enter a price or choose another visibility option').positive('Enter a price or choose another visibility option'),
-      otherwise: Yup.number().notRequired(),
-    }),
 
+  surveyVisibility: Yup.string().required(),
+  resultsVisibility: Yup.string().required(),
   surveyType: Yup.string().required(),
 
-  winnerSelection: Yup.string().required(),
+
+  resultsPassword: Yup.string().when('resultsVisibility', (resultsVisibility, schema) => resultsVisibility !== ResultsVisibility.Public ?
+    schema.required('Enter a password or make results public').max(50, 'Password cannot be longer than ${max} symbols') :
+    schema.notRequired()),
+
+  resultPrice: Yup.number().when('resultsVisibility', (resultsVisibility, schema) => resultsVisibility === ResultsVisibility.PrivateForSale ?
+    schema.required('Enter a price or choose another visibility option').positive('Price must be bigger than 0').max(10000, 'Price cannot be bigger than ${max} Rads') :
+    schema.notRequired()),
+
+
+  winnerSelection: Yup.string().when('surveyType', (surveyType, schema) => surveyType === SurveyType.Paid ?
+    schema.required() :
+    schema.notRequired()),
   
-  firstNCount: Yup.number()
-    .when('surveyType', {
-      is: 'free',
-      then: Yup.number().notRequired(),
-      otherwise: Yup.number()
-        .when('winnerSelection', {
-          is: WinnerSelection.FirstN,
-          then: Yup.number().min(1, winnerCountErrorMsg)
-            .typeError(winnerCountErrorMsg).required(winnerCountErrorMsg)
-            .integer(winnerCountNotIntErrorMsg),
-          otherwise: Yup.number().notRequired()
-        }),
-    }),
+  firstNCount: Yup.number().when(['surveyType', 'winnerSelection'], (surveyType, winnerSelection, schema) => {
+    if (surveyType === SurveyType.Free || winnerSelection !== WinnerSelection.FirstN) 
+      return schema.notRequired();
+    return schema.typeError(winnerCountRequiredErrorMsg).min(1, winnerCountMinErrorMsg).max(9999, winnerCountMaxErrorMsg)
+            .required(winnerCountRequiredErrorMsg).integer(winnerCountNotIntErrorMsg);
+  }),
 
-  randomNAfterTimeCount: Yup.number()
-    .when('surveyType', {
-      is: 'free',
-      then: Yup.number().notRequired(),
-      otherwise: Yup.number()
-        .when('winnerSelection', {
-          is: WinnerSelection.RandomNAfterTime,
-          then: Yup.number().min(1, winnerCountErrorMsg)
-            .typeError(winnerCountErrorMsg).required(winnerCountErrorMsg)
-            .integer(winnerCountNotIntErrorMsg),
-          otherwise: Yup.number().notRequired()
-        })
-    }),
 
-  randomNAfterTimeLength: Yup.number()
-    .when('surveyType', {
-      is: 'free',
-      then: Yup.number().notRequired(),
-      otherwise: Yup.number()
-        .when('winnerSelection', {
-          is: WinnerSelection.RandomNAfterTime,
-          then: Yup.number().min(1, randomNAFterMTimeTimeErrorMsg).typeError(randomNAFterMTimeTimeErrorMsg).required(randomNAFterMTimeTimeErrorMsg),
-          otherwise: Yup.number().notRequired()
-        })
-    }),
+  randomNAfterMNCount: Yup.number().when(['surveyType', 'winnerSelection'], (surveyType, winnerSelection, schema) => {
+    if (surveyType === SurveyType.Free || winnerSelection !== WinnerSelection.RandomNAfterMParticipants) 
+      return schema.notRequired();
+    return schema.typeError(winnerCountRequiredErrorMsg).min(1, winnerCountMinErrorMsg).max(9999, winnerCountMaxErrorMsg)
+            .required(winnerCountRequiredErrorMsg).integer(winnerCountNotIntErrorMsg);
+  }),
+  randomNAfterMMCount: Yup.number().when(['surveyType', 'winnerSelection'], (surveyType, winnerSelection, schema) => {
+    if (surveyType === SurveyType.Free || winnerSelection !== WinnerSelection.RandomNAfterMParticipants) 
+      return schema.notRequired();
+    return schema.typeError(requiredParticipantCountRequiredErrorMsg).min(1, requiredParticipantCountMinErrorMsg).max(9999, requiredParticipantCountMaxErrorMsg)
+            .required(requiredParticipantCountRequiredErrorMsg).integer(requiredParticipantCountNotIntErrorMsg);
+  }),
 
-  randomNAfterTimeUnits: Yup.string()
-    .when('surveyType', {
-      is: 'free',
-      then: Yup.string().notRequired(),
-      otherwise: Yup.string()
-        .when('winnerSelection', {
-          is: WinnerSelection.RandomNAfterTime,
-          then: Yup.string().trim().required(),
-          otherwise: Yup.string().notRequired()
-        })
-    }),
+
+
+  randomNAfterTimeCount: Yup.number().when(['surveyType', 'winnerSelection'], (surveyType, winnerSelection, schema) => {
+    if (surveyType === SurveyType.Free || winnerSelection !== WinnerSelection.RandomNAfterTime) 
+      return schema.notRequired();
+    return schema.typeError(winnerCountRequiredErrorMsg).min(1, winnerCountMinErrorMsg).max(9999, winnerCountMaxErrorMsg)
+            .required(winnerCountRequiredErrorMsg).integer(winnerCountNotIntErrorMsg);
+  }),
+  randomNAfterTimeLength: Yup.number().when(['surveyType', 'winnerSelection' ,'randomNAfterTimeUnits'], (surveyType, winnerSelection, randomNAfterTimeUnits, schema) => {
+    if (surveyType === SurveyType.Free || winnerSelection !== WinnerSelection.RandomNAfterTime) 
+      return schema.notRequired();
+    
+    let max = 0;
+    if (randomNAfterTimeUnits === 'hours') max = 24 * 7 * 4;
+    if (randomNAfterTimeUnits === 'days') max = 4 * 7;
+    if (randomNAfterTimeUnits === 'weeks') max = 4;
+    const maxErrorMsg = randomNAFterMTimeTimeMaxErrorMsg.replace('${max}', max).replace('${units}', randomNAfterTimeUnits.toLowerCase());
+    
+    return schema.typeError(randomNAFterMTimeTimeRequiredErrorMsg).min(1, randomNAFterMTimeTimeMinErrorMsg).max(max, maxErrorMsg)
+            .required(randomNAFterMTimeTimeRequiredErrorMsg).integer(randomNAFterMTimeTimeNotIntErrorMsg);
+  }),
+  randomNAfterTimeUnits: Yup.string().when(['surveyType', 'winnerSelection'], (surveyType, winnerSelection, schema) => {
+    if (surveyType === SurveyType.Free || winnerSelection !== WinnerSelection.RandomNAfterTime) 
+      return schema.notRequired();
+    return schema.required();
+  }),
+
+
   
   totalReward: Yup.number()
     .when('surveyType', {

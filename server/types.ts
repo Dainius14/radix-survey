@@ -14,17 +14,20 @@ export enum AppDataType {
 }
 
 export interface Survey extends AppData {
+  published: number;
   title: string;
   description: string;
+  surveyVisibility: SurveyVisibility;
   resultsVisibility: ResultsVisibility;
   resultsPassword: string;
   resultsPasswordHashed: string;
-  resultsPrice: number;
-  surveyType: SurveyType;
+  resultPrice: number;
   winnerSelection: WinnerSelection;
   totalReward: number;
-  firstNCount: number;
-  published: number;
+  winnerCount: number;
+  requiredParticipantCount: number;
+  winnerSelectionTimeLength: number;
+  winnerSelectionTimeUnits: string;
   radixAddress: string;
   questions: Question[];
 }
@@ -35,12 +38,13 @@ export enum ResultsVisibility {
   PrivateForSale = 'privateForSale'
 }
 
-export enum SurveyType {
-  Free = 'free',
-  Paid = 'paid'
+export enum SurveyVisibility {
+  Public = 'public',
+  Private = 'private',
 }
 
 export enum WinnerSelection {
+  Free = 'free',
   FirstN = 'firstN',
   RandomNAfterTime = 'randomNAfterTime',
   RandomNAfterMParticipants = 'randomNAfterMParticipants',
@@ -49,7 +53,7 @@ export enum WinnerSelection {
 export interface Question {
   questionText: string;
   type: string;
-  // required: boolean;
+  required: boolean;
   answerChoices: AnswerChoice[];
 }
 
@@ -59,6 +63,6 @@ export interface AnswerChoice {
 
 export interface Response extends AppData {
   surveyId: string;
-  userRadixAddress: string;
+  radixAddress: string;
   answers: {};
 }

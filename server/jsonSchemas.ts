@@ -11,8 +11,9 @@ export const newSurvey = {
   "required": [
     "title",
     "description",
+    "surveyVisibility",
     "resultsVisibility",
-    "surveyType",
+    "winnerSelection",
     "questions"
   ],
   "else": {
@@ -29,6 +30,12 @@ export const newSurvey = {
       "minLength": 0,
       "maxLength": 1000
     },
+    "surveyVisibility": {
+      "enum": [
+        "public",
+        "private"
+      ]
+    },
     "resultsVisibility": {
       "enum": [
         "public",
@@ -41,14 +48,16 @@ export const newSurvey = {
       "minLength": 0,
       "maxLength": 1000
     },
-    "resultsPrice": {
+    "resultPrice": {
       "type": "number",
       "min": 0
     },
-    "surveyType": {
+    "winnerSelection": {
       "enum": [
         "free",
-        "paid"
+        "firstN",
+        "randomNAfterTime",
+        "randomNAfterMParticipants"
       ]
     },
     "radixAddress": {
@@ -60,19 +69,19 @@ export const newSurvey = {
       "type": "number",
       "minValue": 0,
     },
-    "firstNCount": {
+    "winnerCount": {
       "type": "integer",
       "minValue": "1"
     },
-    "randomNAfterTimeCount": {
+    "requiredParticipantCount": {
       "type": "integer",
       "minValue": "1"
     },
-    "randomNAfterTimeLength": {
+    "winnerSelectionTimeLength": {
       "type": "integer",
       "minValue": "1"
     },
-    "randomNAfterTimeUnits": {
+    "winnerSelectionTimeUnits": {
       "enum": ["hours", "days", "weeks"]
     },
 

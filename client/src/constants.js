@@ -9,3 +9,13 @@ export const ResultsVisibility = {
   Private: 'private',
   PrivateForSale: 'privateForSale'
 }
+
+export const SurveyVisibility = {
+  Public: 'public',
+  Private: 'private',
+}
+
+export const SurveyType = {
+  Free: 'free',
+  Paid: 'paid',
+}
