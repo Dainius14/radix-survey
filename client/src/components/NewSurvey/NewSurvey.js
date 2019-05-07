@@ -27,7 +27,6 @@ function NewSurveyContainer({ history }) {
 }
 
 function NewSurveyForm({ values, ...form }) {
-  console.debug('Errors', form.errors)
   const firstNDisabled = values.winnerSelection !== WinnerSelection.FirstN;
   const randomNAfterTimeDisabled = values.winnerSelection !== WinnerSelection.RandomNAfterTime;
   const randomNAfterMParticipantsDisabled = values.winnerSelection !== WinnerSelection.RandomNAfterMParticipants;
@@ -424,7 +423,8 @@ async function handleSubmit(values, form, history) {
   survey.questions = values.questions.filter(x => x).map(q => {
     const question = {
       questionText: q.questionText,
-      type: q.type
+      type: q.type,
+      required: q.required
     };
 
     // Get associated answer choices

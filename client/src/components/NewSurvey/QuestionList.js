@@ -1,5 +1,5 @@
 import React from 'react';
-import { Button, Form, Input, Select, Radio, Checkbox, Typography } from 'antd';
+import { Button, Form, Input, Select, Radio, Checkbox, Typography, Switch } from 'antd';
 import '../../styles/QuestionDeleteButton.css';
 import { FastField, FieldArray } from 'formik';
 const { Text } = Typography;
@@ -9,7 +9,6 @@ const { TextArea } = Input;
 function QuestionList ({ form, push, remove }) {
   const addQuestion = () => push({ ...questionTemplate, id: questionId++ });
   const removeQuestion = (index) => remove(index);
-
   return <>
     {form.values.questions.map((question, index) => {
       return <div key={question.id}>
@@ -24,8 +23,7 @@ function QuestionList ({ form, push, remove }) {
                 validateStatus={form.errors.questions && form.submitCount > 0 ? "error" : "success"}>
         <Text>There are no questions. Start by adding some questions!</Text>
       </Form.Item>}
-    <Button icon="plus" type="dashed" onClick={addQuestion}
-      style={{ width: '100%' }}>Add question</Button>
+    <Button icon="plus" type="dashed" onClick={addQuestion} style={{ width: '100%' }}>Add question</Button>
   </>;
 }
 
@@ -63,14 +61,16 @@ function Question({ form, question, index, removeQuestion }) {
                 className="question-delete-button"
                 style={{ width: '6%' }}
                 onClick={removeQuestion} />
-        <br/>
         
       </Input.Group>
 
+      <span style={{ float: 'right' }}>
+        <RequiredSwitch positionInArray={index}/>
+      </span>
       
       <FieldArray name="answers">
-          {arrayHelpers => <Answers {...arrayHelpers} question={question}/>}
-        </FieldArray>
+        {arrayHelpers => <Answers {...arrayHelpers} question={question}/>}
+      </FieldArray>
     </Form.Item>
   );
 }
@@ -80,7 +80,6 @@ function QuestionText({ positionInArray }) {
   return (
     <FastField name={`questions.${positionInArray}.questionText`}>
       {({ field, form }) => {
-        console.log(field)
         return (
           <Input name={field.name} value={field.value}
                 onChange={e => form.setFieldValue(field.name, e.target.value)}
@@ -112,13 +111,29 @@ function QuestionType({ positionInArray }) {
   );
 }
 
+
+function RequiredSwitch({ positionInArray }) {
+  return <>
+    <Text style={{ marginRight: '1ch' }}>Required</Text>
+    <FastField name={`questions.${positionInArray}.required`}>
+      {({ field, form }) => {
+        return (
+          <Switch name={field.name} checked={field.value}
+                  onChange={v => form.setFieldValue(field.name, v)}/>
+        );
+      }}
+    </FastField>
+  </>;
+}
+
 function Answers({ question, form, push, remove }) {
   // Add position in array to answer and filter only relavant answers
   const answers = form.values.answers.map((x, index) => ({ ...x, index })).filter(x => x.questionId === question.id);
   const addAnswer = () => push({ ...answerTemplate, id: answerId++, questionId: question.id });
   const removeAnswer = (index) => remove(index);
-  const validateAnswer = (value) => {
-    if (['radio', 'checkbox'].indexOf(question.type) !== -1 && !value.trim()) {
+  const validateAnswer = (value, index) => {
+    console.log(form)
+    if (['radio', 'checkbox'].includes(question.type) && !value.trim() && form.touched.answers[index]) {
       return 'Supply an answer choice or delete it';
     }
     return undefined;
@@ -138,6 +153,7 @@ function Answers({ question, form, push, remove }) {
   }
 }
 
+
 function AddAnswerButton({ addAnswer }) {
   return <Button icon="plus" type="dashed" onClick={addAnswer} >Add answer</Button>;
 }
@@ -146,11 +162,11 @@ function RadioCheckboxAnswers({ component: Component, answers, addAnswer, remove
   const componentStyle = { marginRight: 8 };
   return <>
     {answers.map((answer, positionInQuestion) => (
-      <div key={answer.id} >
+      <span style={{ display: 'contents' }} key={answer.id}>
         <Component style={componentStyle} disabled />
         
         <FastField name={`answers.${answer.index}.answerText`}
-                   validate={validateAnswer}>
+                   validate={(value) => validateAnswer(value, answer.index)}>
           {({ field, form }) => {
             return (
               <Input name={field.name} value={field.value} style={{ width: '50%'}}
@@ -162,7 +178,8 @@ function RadioCheckboxAnswers({ component: Component, answers, addAnswer, remove
         </FastField>
 
         <Button shape="circle" icon="close" style={{ border: 'none' }} onClick={() => removeAnswer(answer.index)}/>
-      </div>
+        <br />
+      </span>
     ))}
 
     <Component style={componentStyle} disabled />
@@ -171,18 +188,19 @@ function RadioCheckboxAnswers({ component: Component, answers, addAnswer, remove
 }
 
 function ShortTextAnswer() {
-  return <Input placeholder="User's answer" disabled />;
+  return <Input placeholder="User's answer" disabled style={{ width: '80%' }} />;
 }
 
 function LongTextAnswer() {
-  return <TextArea placeholder="User's answer" rows={2} disabled />
+  return <TextArea placeholder="User's answer" rows={2} disabled style={{ width: '80%' }} />
 }
 
 let questionId = 0;
 const questionTemplate = {
   id: undefined,
   questionText: '',
-  type: 'radio'
+  type: 'radio',
+  required: true
 };
 
 let answerId = 0;
