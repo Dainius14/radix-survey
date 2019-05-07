@@ -102,7 +102,7 @@ const surveys = (state = initialState, action) => {
           isLoading: {$set: false},
           data: {
             [data.survey.id]: {
-              $merge: {responses: data.responses}
+              responses: {$set: data.responses}
             }
           }
         });

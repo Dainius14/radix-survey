@@ -379,6 +379,7 @@ async function handleSubmit(values, form, history) {
     description: values.description,
     surveyVisibility: values.surveyVisibility,
     resultsVisibility: values.resultsVisibility,
+    surveyType: values.surveyType
   }
 
   if (values.resultsVisibility !== ResultsVisibility.Public) {
@@ -414,9 +415,6 @@ async function handleSubmit(values, form, history) {
       default:
         break;
     }
-  }
-  else if (values.surveyType === SurveyType.Free){
-    survey.winnerSelection = values.surveyType;
   }
 
   // Filter out undefined questions

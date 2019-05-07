@@ -9,7 +9,7 @@ import winston, { format } from 'winston';
 import key from './key.json';
 import { newSurvey, surveyAnswers } from './jsonSchemas';
 import { random, hashPassword } from './utils';
-import { Survey, Response, AppData, Payload, AppDataType, WinnerSelection, ResultsVisibility } from './types';
+import { Survey, Response, AppData, Payload, AppDataType, WinnerSelection, ResultsVisibility, SurveyType } from './types';
 import { TSMap } from 'typescript-map';
 import { info } from 'verror';
 
@@ -224,7 +224,7 @@ server.post('/api/surveys', (req, res, next) => {
     delete survey.resultsPassword;
   }
 
-  if (survey.winnerSelection === WinnerSelection.Free) {
+  if (survey.surveyType === SurveyType.Free) {
       submitSurveyToRadix(survey);
   }
   else {
@@ -269,21 +269,19 @@ server.post('/api/surveys/:survey_id/answers', (req, res, next) => {
 
   // Answers are valid
   const answers: Response = { ...req.body, created: new Date().getTime(), surveyId: survey.id };
-  logger.debug(`Survey ${survey.id} type: ${survey.winnerSelection}`);
+  logger.debug(`Survey ${survey.id} type: ${survey.surveyType}`);
   
-  if (survey.winnerSelection !== WinnerSelection.Free) {
-    switch (survey.winnerSelection) {
-      case WinnerSelection.FirstN: {
-        const answerCount = getSurveyResponseCount(survey.id);
-        logger.debug(`Survey answer count is ${answerCount} and first ${survey.winnerCount} people must be rewarded`);
-  
-        if (answerCount <= survey.winnerCount) {
-          transferTokens(answers.radixAddress, survey.totalReward / survey.winnerCount);
-        }
+  switch (survey.winnerSelection) {
+    case WinnerSelection.FirstN: {
+      const answerCount = getSurveyResponseCount(survey.id);
+      logger.debug(`Survey answer count is ${answerCount} and first ${survey.winnerCount} people must be rewarded`);
+
+      if (answerCount <= survey.winnerCount) {
+        transferTokens(answers.radixAddress, survey.totalReward / survey.winnerCount);
       }
-      default:
-        break;
     }
+    default:
+      break;
   }
 
   submitAnswersToRadix(answers);

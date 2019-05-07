@@ -13,7 +13,7 @@ export const newSurvey = {
     "description",
     "surveyVisibility",
     "resultsVisibility",
-    "winnerSelection",
+    "surveyType",
     "questions"
   ],
   "else": {
@@ -52,9 +52,14 @@ export const newSurvey = {
       "type": "number",
       "min": 0
     },
-    "winnerSelection": {
+    "surveyType": {
       "enum": [
         "free",
+        "paid"
+      ]
+    },
+    "winnerSelection": {
+      "enum": [
         "firstN",
         "randomNAfterTime",
         "randomNAfterMParticipants"

@@ -6,6 +6,7 @@ import * as SurveyListActions from '../../actions/SurveyListActions';
 import '../../styles/MultilineCode.css';
 import '../../styles/RequiredAsteriskAfter.css';
 import '../../styles/NoBottomMargin.css';
+import { SurveyType } from '../../constants';
 const { TextArea } = Input;
 const { Title, Paragraph, Text } = Typography;
 
@@ -20,11 +21,26 @@ class Survey extends React.Component {
     event.preventDefault();
     this.props.form.validateFields((error, values) => {
       if (!error) {
-        const answers = { answers: { ...values } };
-        if (answers.surveyType !== 'free') {
-          answers.userRadixAddress = values.userRadixAddress;
+        const survey = this.props.survey;
+        
+        // Put radio answers into array
+        const response = {
+          answers: Object.keys(values).reduce((acc, key) => {
+            if (key == 'radixAddress') return;
+
+            if (survey.questions[key].type === 'radio')
+              acc[key] = [ values[key] ];
+            else
+              acc[key] = values[key];
+            return acc;
+          }, {})
+        };
+
+        if (survey.surveyType === 'paid') {
+          response.radixAddress = values.radixAddress || null;
         }
-        this.props.postSurveyAnswers(this.props.survey.id, answers, message);
+
+        this.props.postSurveyAnswers(survey.id, response, message);
       }
     });
   }
@@ -64,11 +80,11 @@ class Survey extends React.Component {
         <Divider/>
         <Form layout="vertical" onSubmit={this.handleSubmit}>
 
-          {survey.surveyType !== 'free' &&
+          {survey.surveyType === SurveyType.Paid &&
             <Form.Item label={<Title level={4} className="no-bottom-margin">Your Radix DLT wallet address</Title>}>
           
-            {getFieldDecorator('userRadixAddress', {
-              rules: [{ required: survey.surveyType !== 'free', message: 'Your Radix DLT address is required' }]
+            {getFieldDecorator('radixAddress', {
+              rules: [{ required: false }]
             })(
               <Input placeholder='Address of your Radix DLT wallet address where you want to receive the prize'/>
             )}

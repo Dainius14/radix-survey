@@ -19,6 +19,7 @@ export interface Survey extends AppData {
   description: string;
   surveyVisibility: SurveyVisibility;
   resultsVisibility: ResultsVisibility;
+  surveyType: SurveyType;
   resultsPassword: string;
   resultsPasswordHashed: string;
   resultPrice: number;
@@ -48,6 +49,10 @@ export enum WinnerSelection {
   FirstN = 'firstN',
   RandomNAfterTime = 'randomNAfterTime',
   RandomNAfterMParticipants = 'randomNAfterMParticipants',
+}
+export enum SurveyType {
+  Free = 'free',
+  Paid = 'paid',
 }
 
 export interface Question {
