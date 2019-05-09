@@ -167,12 +167,7 @@ export const surveyAnswers = {
     "answers"
   ],
   "properties": {
-    "surveyId": {
-      "type": "string",
-      "minLength": 29,
-      "maxLength": 30
-    },
-    "userRadixAddress": {
+    "radixAddress": {
       "type": "string",
       "minLength": 51,
       "maxLength": 51

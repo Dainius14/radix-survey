@@ -1,4 +1,4 @@
-import { request } from '../utilities';
+import { request, history } from '../utilities';
 
 export const CLOSE_PASSWORD_DIALOG = 'CLOSE_PASSWORD_DIALOG';
 export function closePasswordDialog() {
@@ -97,6 +97,24 @@ export const postSurveyAnswersError = (error) => ({
 });
 
 
+export const BUY_SURVEY_RESULTS_REQUEST = 'BUY_SURVEY_RESULTS_REQUEST';
+export const buySurveyResultsRequest = () => ({
+  type: BUY_SURVEY_RESULTS_REQUEST
+});
+
+export const BUY_SURVEY_RESULTS_SUCCESS = 'BUY_SURVEY_RESULTS_SUCCESS';
+export const buySurveyResultsSuccess = (data) => ({
+  type: BUY_SURVEY_RESULTS_SUCCESS,
+  data
+});
+
+export const BUY_SURVEY_RESULTS_ERROR = 'BUY_SURVEY_RESULTS_ERROR';
+export const buySurveyResultsError = (error) => ({
+  type: BUY_SURVEY_RESULTS_ERROR,
+  error
+});
+
+
 const API_ENDPOINT = process.env.REACT_APP_API_ENDPOINT || window.location.origin;
 
 export function getSurveys() {
@@ -167,9 +185,9 @@ export function getSurveyResults(surveyId, password) {
 }
 
 
-export function postSurveyAnswers(surveyId, answers, antMessage) {
+export function postSurveyAnswers(surveyId, surveyResponse, antMessage) {
   return async dispatch => {
-    console.debug('postSurveyAnswers() request', { surveyId, answers });
+    console.debug('postSurveyAnswers() request', { surveyId, surveyResponse });
     dispatch(postSurveyAnswersRequest());
     
     try {
@@ -178,7 +196,7 @@ export function postSurveyAnswers(surveyId, answers, antMessage) {
         headers: {
           'Content-Type': 'application/json'
         },
-        body: JSON.stringify(answers)
+        body: JSON.stringify(surveyResponse)
       });
       console.debug('postSurveyAnswers() success', response);
       dispatch(postSurveyAnswersSuccess(response));
@@ -188,6 +206,31 @@ export function postSurveyAnswers(surveyId, answers, antMessage) {
     catch (error) {
       console.error('postSurveyAnswers() error', error);
       dispatch(postSurveyAnswersError(error));
+    }
+  }
+}
+
+
+export function buySurveyResults(surveyId, radixAddress) {
+  return async dispatch => {
+    console.debug('buySurveyResults() request', { surveyId, radixAddress });
+    dispatch(buySurveyResultsRequest());
+    
+    try {
+      const response = await request(`${API_ENDPOINT}/api/surveys/${surveyId}/results`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ radixAddress })
+      });
+      console.debug('buySurveyResults() success', response);
+      dispatch(buySurveyResultsSuccess(response));
+      history.push(`/surveys/${surveyId}/results`)
+    }
+    catch (error) {
+      console.error('buySurveyResults() error', error);
+      dispatch(buySurveyResultsError(error));
     }
   }
 }

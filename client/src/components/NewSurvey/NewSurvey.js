@@ -9,10 +9,9 @@ import '../../styles/AntFormItemNoBottomMargin.css';
 import QuestionList from './QuestionList';
 import { WinnerSelection, ResultsVisibility, SurveyVisibility, SurveyType } from '../../constants';
 import { request } from '../../utilities';
+import QRCode from 'qrcode.react';
 const { Text, Paragraph, Title } = Typography;
 const { Option } = Select;
-
-
 
 const winnerSelectionRadioStyle = { display: 'block', height: '30px', lineHeight: '30px', };
 const formCategoryStyle = { marginBottom: 0 };
@@ -108,13 +107,20 @@ function NewSurveyForm({ values, ...form }) {
             placeholder="Password to access results of your survey" type="password" />
 
           {values.resultsVisibility === ResultsVisibility.PrivateForSale &&
-            <FastField component={FormikInputNumber} name="resultPrice"
-              label={<>
-                <Text>Price for one answer</Text>&nbsp;
-                <Tooltip title="This is the price the person buying answers of your survey will pay for one answer">
-                  <Icon type="question-circle-o" style={{ verticalAlign: 'initial' }} />
-                </Tooltip>
-              </>} required />
+            <>
+              <FastField
+                component={FormikInputNumber}
+                name="resultPrice"
+                label={<>
+                  Price for one answer&nbsp;
+                  <Tooltip title="This is the price the person buying answers of your survey will pay for one answer">
+                    <Icon type="question-circle-o" style={{ verticalAlign: 'initial' }} />
+                  </Tooltip>
+                </>} required />
+              
+              <FastField component={FormikInput} name="radixAddress" label="Your RadixDLT account address" required
+              placeholder="Your Radix wallet address" type="text" />
+            </>
           }
         </>
       }
@@ -281,12 +287,14 @@ function NewSurveyForm({ values, ...form }) {
             }}
           </Field>
 
-
-          <FastField component={FormikInput} name="radixAddress" label="Your RadixDLT account address" required
-                placeholder="Your Radix wallet address"
-                type="text" style={{ fontFamily: 'monospace' }} />
           
-          <Paragraph>Transfer <b>{values.totalReward || 0}</b> tokens to <Text code>9g7MxcyYrXAFpMMMnPZD74etUAdd7kiRufpkxeuf921haFgAiNs</Text> account</Paragraph>
+          <FastField component={FormikInput} name="radixAddress" label="Your RadixDLT account address" required
+                placeholder="Your Radix wallet address" type="text" />
+          
+          <Paragraph>Transfer <Text strong>{values.totalReward || 0}</Text> tokens to our RadixDLT wallet.</Paragraph>
+          
+          <div style={{ textAlign: 'center' }}>Our wallet address is <Text code copyable>9g7MxcyYrXAFpMMMnPZD74etUAdd7kiRufpkxeuf921haFgAiNs</Text></div>
+          <QRCode value="9g7MxcyYrXAFpMMMnPZD74etUAdd7kiRufpkxeuf921haFgAiNs" style={{ margin: '8px auto', display: 'block' }}/>
         </>
       }
 
@@ -387,6 +395,7 @@ async function handleSubmit(values, form, history) {
 
     if (values.resultsVisibility === ResultsVisibility.PrivateForSale) {
       survey.resultPrice = values.resultPrice;
+      survey.radixAddress = values.radixAddress;
     }
   }
 
@@ -589,12 +598,11 @@ const validationSchema = Yup.object().shape({
         .required('Total reward is required')
     }),
 
-  radixAddress: Yup.string()
-    .when('surveyType', {
-      is: 'free',
-      then: Yup.string().notRequired(),
-      otherwise: Yup.string().length(51, 'Radix account address is 51 characters long').required('RadixDLT account address is required')
-    }),
+  radixAddress: Yup.string().when(['surveyType', 'resultsVisibility'], (surveyType, resultsVisibility, schema) => {
+    if (surveyType === SurveyType.Free && resultsVisibility !== ResultsVisibility.PrivateForSale) 
+      return schema.notRequired();
+    return schema.length(51, 'Radix account address is 51 characters long').required('RadixDLT account address is required')
+  }),
 
   questions: Yup.array(questionValidationSchema).min(1, 'Add at least 1 question before submitting'),
 });

@@ -1,5 +1,6 @@
 import * as Actions from '../actions/SurveyListActions';
 import update from 'immutability-helper';
+import { history } from '../utilities';
 
 const initialState = {
   isLoading: true,
@@ -96,25 +97,24 @@ const surveys = (state = initialState, action) => {
     case Actions.GET_SURVEY_RESULTS_SUCCESS: {
       const { data } = action;
       
-      if (state.data[data.survey.id]) {
+      if (state.data[data.id]) {
         return update(state, {
           error: {$set: null},
           isLoading: {$set: false},
           data: {
-            [data.survey.id]: {
+            [data.id]: {
               responses: {$set: data.responses}
             }
           }
         });
       }
       else {
-        const survey = { ...data.survey, responses: data.responses };
         return update(state, {
           error: {$set: null},
           isLoading: {$set: false},
           data: {
-            $merge: {[data.survey.id]: survey},
-            items: {$push: [data.survey.id]}
+            $merge: {[data.id]: data},
+            items: {$push: [data.id]}
           }
         });
       }
@@ -127,7 +127,29 @@ const surveys = (state = initialState, action) => {
       });
     }
 
-    case Actions.GET_SURVEY_RESULTS_ERROR: {
+    case Actions.BUY_SURVEY_RESULTS_REQUEST: {
+      return state;
+      return update(state, {
+        isLoading: {$set: false},
+        error: {$set: action.error}
+      });
+    }
+    case Actions.BUY_SURVEY_RESULTS_SUCCESS: {
+      const { data } = action;
+      
+      return update(state, {
+        error: {$set: null},
+        isLoading: {$set: false},
+        data: {
+          [data.surveyId]: {
+            responses: {$set: data.responses},
+            responsesPurchased: {$set: true}
+          }
+        }
+      });
+    }
+
+    case Actions.BUY_SURVEY_RESULTS_ERROR: {
       return state;
       return update(state, {
         isLoading: {$set: false},

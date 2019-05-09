@@ -14,6 +14,7 @@ export enum AppDataType {
 }
 
 export interface Survey extends AppData {
+  shortId: string;
   published: number;
   title: string;
   description: string;
@@ -31,6 +32,11 @@ export interface Survey extends AppData {
   winnerSelectionTimeUnits: string;
   radixAddress: string;
   questions: Question[];
+
+  firstResponse: number | null;
+  lastResponse: number | null;
+  totalResponses: number;
+  responses: Response[];
 }
 
 export enum ResultsVisibility {

@@ -1,4 +1,7 @@
 import fetch from 'cross-fetch';
+import createHistory from 'history/createBrowserHistory';
+
+export const history = createHistory();
 
 // Taken from https://github.com/github/fetch/issues/203#issuecomment-266034180
 /**

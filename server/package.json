@@ -11,8 +11,8 @@
   "author": "Dainius Dauksevicius",
   "license": "MIT",
   "dependencies": {
-    "@types/bcrypt": "^3.0.0",
     "ajv": "^6.10.0",
+    "axios": "^0.18.0",
     "bcrypt": "^3.0.6",
     "dotenv": "^7.0.0",
     "radixdlt": "^1.0.7-alpha",
@@ -20,10 +20,11 @@
     "restify-cors-middleware": "^1.1.1",
     "restify-errors": "^7.0",
     "rxjs": "^6.4.0",
+    "shortid": "^2.2.14",
     "winston": "^3.2.1"
   },
   "devDependencies": {
-    "@types/nedb": "^1.8.7",
+    "@types/bcrypt": "^3.0.0",
     "@types/restify": "^7.2.9",
     "@types/restify-errors": "^4.3.3",
     "ts-node": "^8.0.3",

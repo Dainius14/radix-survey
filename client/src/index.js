@@ -2,11 +2,12 @@ import React from 'react';
 import ReactDOM from 'react-dom';
 import './index.css';
 import App from './components/App';
-import { BrowserRouter } from 'react-router-dom';
+import { Router } from 'react-router-dom';
 import { createStore, applyMiddleware, compose } from 'redux';
 import thunkMiddleware from 'redux-thunk';
 import { Provider } from 'react-redux';
 import rootReducer from './reducers';
+import { history } from './utilities';
 
 const composeEnhancers =
   typeof window === 'object' &&
@@ -23,9 +24,9 @@ const store = createStore(rootReducer, enhancer);
 
 ReactDOM.render(
   <Provider store={store}>
-    <BrowserRouter>
+    <Router history={history}>
       <App/>
-    </BrowserRouter>
+    </Router>
   </Provider>,
   document.getElementById('root')
 );

@@ -6,6 +6,7 @@ import Header from './Header';
 import CreateSurvey from './NewSurvey/NewSurvey';
 import Survey from './Survey/Survey';
 import Results from './Survey/Results';
+import BuyResults from './Survey/BuyResults';
 import SurveyList from './SurveyList/SurveyList';
 import NotFound404 from './NotFound404';
 const { Content } = Layout;
@@ -24,6 +25,7 @@ function App() {
             <Route exact path='/surveys/create'component={CreateSurvey} />
             <Route exact path='/surveys/:surveyId' component={Survey} />
             <Route exact path='/surveys/:surveyId/results' component={Results} />
+            <Route exact path='/surveys/:surveyId/results/buy' component={BuyResults} />
             <Route path='*' component={NotFound404} />
           </Switch>
 

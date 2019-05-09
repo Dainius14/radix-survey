@@ -1,13 +1,14 @@
 import React from 'react';
 import { connect } from 'react-redux';
 import { NavLink } from 'react-router-dom';
-import { Form, Divider, Button, Spin, Input, Radio, Checkbox, Typography, message } from 'antd';
+import { Form, Divider, Button, Spin, Input, Radio, Checkbox, Typography, message, Row } from 'antd';
 import * as SurveyListActions from '../../actions/SurveyListActions';
 import '../../styles/MultilineCode.css';
 import '../../styles/RequiredAsteriskAfter.css';
 import '../../styles/NoBottomMargin.css';
 import { PageHeader, DescriptionItem } from '../PageHeader';
-import { SurveyType, ResultsVisibility } from '../../constants';
+import { SurveyType, ResultsVisibility, WinnerSelection } from '../../constants';
+import { format as formatDate } from 'timeago.js';
 const { TextArea } = Input;
 const { Title, Paragraph, Text } = Typography;
 
@@ -27,7 +28,7 @@ class Survey extends React.Component {
         // Put radio answers into array
         const response = {
           answers: Object.keys(values).reduce((acc, key) => {
-            if (key == 'radixAddress') return;
+            if (key == 'radixAddress') return acc;
 
             if (survey.questions[key].type === 'radio')
               acc[key] = [ values[key] ];
@@ -42,6 +43,7 @@ class Survey extends React.Component {
         }
 
         this.props.postSurveyAnswers(survey.id, response, message);
+        this.props.form.resetFields();
       }
     });
   }
@@ -70,21 +72,43 @@ class Survey extends React.Component {
         <Text code className="multiline-code">{JSON.stringify(error, null, 4)}</Text>
       );
     }
-
+    console.log('this.props', this.props)
     // Got survey, can render it
     return (
       <>
         <PageHeader
           title={survey.title}
-          subTitle="Survey"
           onBack={() => this.props.history.push('/surveys')}
           bottomLeftActions={
-            <Button onClick={() => this.props.history.push(`${this.props.match.url}/results`)}
-              icon="pie-chart">
-              {`Show results ${survey.resultsVisibility !== ResultsVisibility.Public ? '(private)' : ''}`}
-            </Button>
+            <>
+              <Button onClick={() => this.props.history.push(`/surveys/${this.props.match.params.surveyId}/results`)}
+                icon="pie-chart">
+                {`Show results ${survey.resultsVisibility !== ResultsVisibility.Public ? '(private)' : ''}`}
+              </Button>
+              {survey.resultsVisibility === ResultsVisibility.PrivateForSale &&
+              <Button onClick={() => this.props.history.push(`/surveys/${this.props.match.params.surveyId}/results/buy`)}
+                icon="pie-chart">Buy results</Button>}
+            </>
           }
           >
+          <Row>
+            <DescriptionItem label="Survey created">{formatDate(survey.published)}</DescriptionItem>
+            <DescriptionItem label="Survey type">{survey.surveyType[0].toUpperCase() + survey.surveyType.substr(1)}</DescriptionItem>
+            {survey.surveyType === SurveyType.Paid && <>
+            <DescriptionItem label="Winner selection">
+              {survey.winnerSelection === WinnerSelection.FirstN && <>
+                First {survey.winnerCount} to respond
+              </>}
+              {survey.winnerSelection === WinnerSelection.RandomNAfterMParticipants && <>
+                {survey.winnerCount} winners after {survey.requiredParticipants} responses
+              </>}
+              {/* {survey.winnerSelection === WinnerSelection.RandomNAfterTime && <>
+                {survey.winnerCount} winners after {survey.} responses
+              </>} */}
+            </DescriptionItem>
+            <DescriptionItem label="Price">{survey.totalReward / survey.winnerCount} Rads</DescriptionItem>
+            </>}
+          </Row>
 
           <Paragraph>{survey.description}</Paragraph>
           

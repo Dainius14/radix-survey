@@ -22,6 +22,9 @@ class Results extends React.Component {
   componentDidMount() {
     const { match, getSurveyResults } = this.props;
     getSurveyResults(match.params.surveyId);
+    // else if (survey.resultsVisibility !== ResultsVisibility.Public) {
+      
+    // }
   }
 
   componentDidUpdate(prevProps, prevState) {
@@ -29,12 +32,6 @@ class Results extends React.Component {
         && (!this.state.chartOptions || prevProps.survey.responses.length !== this.props.survey.responses.length)) {
       this.setupCharts();
       this.setupTableData();
-      
-      const responses = this.props.survey.responses;
-      this.setState({
-        firstResponse: responses[0] && responses.reduce((acc, response) => Math.min(response.created, acc), responses[0].created),
-        lastResponse: responses[0] && responses.reduce((acc, response) => Math.max(response.created, acc), responses[0].created),
-      });
     }
   }
 
@@ -225,17 +222,23 @@ class Results extends React.Component {
         <div style={{ display: 'flex' }}>
           <div style={{ flex: 1 }}>
             <Row>
-              <DescriptionItem label="Survey created">{formatDate(survey.created)}</DescriptionItem>
+              <DescriptionItem label="Survey created">{formatDate(survey.published)}</DescriptionItem>
               <DescriptionItem label="Survey type">{survey.surveyType[0].toUpperCase() + survey.surveyType.substr(1)}</DescriptionItem>
-              <DescriptionItem label="First response">{state.firstResponse ? formatDate(state.firstResponse) : '-'}</DescriptionItem>
-              <DescriptionItem label="Last response">{state.lastResponse ? formatDate(state.lastResponse) : '-'}</DescriptionItem>
+              <DescriptionItem label="First response">{survey.firstResponse ? formatDate(survey.firstResponse) : '-'}</DescriptionItem>
+              <DescriptionItem label="Last response">{survey.lastResponse ? formatDate(survey.lastResponse) : '-'}</DescriptionItem>
             </Row>
           </div>
           <div>
             <Row>
-              <Col span={24}>
-                <Statistic title="Total responses" value={survey.responses ? survey.responses.length : ''} />
+              <Col span={12}>
+                <Statistic title="Total responses" value={survey.totalResponses} />
               </Col>
+
+              {survey.responsesPurchased &&
+              <Col span={12}>
+                <Statistic title="Your purchased responses" value={survey.responses.length} />
+              </Col>}
+              
               
             </Row>
           </div>

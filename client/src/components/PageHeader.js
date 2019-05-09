@@ -2,22 +2,25 @@ import React from 'react';
 import { PageHeader as AntPageHeader, Col, Divider } from 'antd';
 import '../styles/PageHeader.css';
 
-export const PageHeader = React.memo(({ title, subTitle, onBack, bottomLeftActions, bottomRightActions, children}) => {
+export const PageHeader = React.memo(({ title, subTitle, onBack, bottomLeftActions, bottomRightActions, rightSide, children}) => {
   return <>
     <AntPageHeader
       title={title}
       subTitle={subTitle}
       className="custom-header"
       onBack={onBack}
-      >
+    >
       {children}
+
       <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: 12 }}>
-        {bottomLeftActions}
-        {bottomRightActions}
+        <div>{bottomLeftActions}</div>
+        <div>{bottomRightActions}</div>
       </div>
+
     </AntPageHeader>
-    <Divider/>
-    </>;
+
+    <Divider />
+  </>;
 });
 
 

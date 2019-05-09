@@ -1,17 +1,14 @@
 import restify from 'restify';
 import errors from 'restify-errors';
 import bcrypt from 'bcrypt';
-import { radixUniverse, RadixUniverse, RadixLogger, RadixKeyStore, RadixSimpleIdentity, RadixAtom, RadixTransactionBuilder, RadixNEDBAtomCache, radixTokenManager, RadixAccount, RadixApplicationData } from 'radixdlt';
+import { radixUniverse, RadixUniverse, RadixLogger, RadixKeyStore, RadixSimpleIdentity, RadixAtom, RadixTransactionBuilder, RadixNEDBAtomCache, radixTokenManager, RadixAccount, RadixApplicationData, RadixKeyPair } from 'radixdlt';
 import Ajv from 'ajv';
-import { filter as rxFilter } from 'rxjs/operators';
 import winston, { format } from 'winston';
+import axios from 'axios';
 
 import key from './key.json';
 import { newSurvey, surveyAnswers } from './jsonSchemas';
-import { random, hashPassword } from './utils';
-import { Survey, Response, AppData, Payload, AppDataType, WinnerSelection, ResultsVisibility, SurveyType } from './types';
-import { TSMap } from 'typescript-map';
-import { info } from 'verror';
+import { Survey, Response, AppData, Payload, AppDataType, WinnerSelection, ResultsVisibility, SurveyType, SurveyVisibility } from './types';
 
 // Setup logging
 const logger = winston.createLogger({
@@ -79,11 +76,12 @@ let identity: RadixSimpleIdentity;
 let account: RadixAccount;
 
 const surveysWaitingForId: any = {};
+const surveysWaitingForResultsPurchase: any[] = [];
+const paidSurveysWaitingForTokens: any[] = [];
 
 RadixKeyStore.decryptKey(key, process.env.KEY_PASSWORD as string)
-  .then((keyPair) => {
+  .then((keyPair: RadixKeyPair) => {
     identity = new RadixSimpleIdentity(keyPair);
-
     account = identity.account;
     account.enableCache(new RadixNEDBAtomCache('./cache.db'));
     account.openNodeConnection();
@@ -100,25 +98,42 @@ RadixKeyStore.decryptKey(key, process.env.KEY_PASSWORD as string)
       }
 
       const participants: string[] = Object.values(transaction.participants);
+      if (participants.length === 0) {
+        logger.error('Received transaction with no participants:', transactionUpdate);
+        return;
+      }
+
       const balance = radixToken.toTokenUnits((transaction.balance as any)[radixToken.id.toString()])
       if (participants.length > 1) {
         logger.warn('There is more than one participant:', transactionUpdate);
       }
       
-      logger.info(`Received a transaction of ${balance} ${(radixToken as any).label} from ${participants[0]}`);
-      
-      for (let i = 0; i < waitingSurveys.length; i++) {
-        const survey = waitingSurveys[i];
-        if (survey.radixAddress === participants[0]) {
-          logger.info(`Found survey '${survey.title}' waiting for a transaction of ${survey.totalReward}`);
 
-          if (balance < survey.totalReward) {
-            logger.info(`Received ${balance} tokens are not sufficient (required ${survey.totalReward})`);
-            continue;
-          }
+
+      // Buy results
+      const transactionFrom = participants[0];
+      logger.info(`Received a transaction of ${balance} ${(radixToken as any).label} from ${transactionFrom}`);
+      
+      const waitingForPurchase = surveysWaitingForResultsPurchase.find((x: any) => transactionFrom.startsWith(x.radixAddress));
+      if (waitingForPurchase) {
+        logger.info(`There is a survey '${waitingForPurchase.survey.title}' waiting for its results to be bought`);
+        buyResults(waitingForPurchase, balance);
+      }
+
+
+
+      // Publish paid survey
+      const paidSurveyWaitingForTokens = paidSurveysWaitingForTokens.find((x: any) => transactionFrom.startsWith(x.radixAddress));
+      if (paidSurveyWaitingForTokens) {
+        const survey = paidSurveyWaitingForTokens;
+        logger.info(`Found survey '${survey.title}' waiting for a transaction of ${survey.totalReward}`);
+
+        if (balance >= survey.totalReward) {
           logger.info(`Received tokens are sufficient`);
           submitSurveyToRadix(survey);
-          break;
+        }
+        else {
+          logger.info(`Received ${balance} tokens are not sufficient (required ${survey.totalReward})`);
         }
       }
     });
@@ -142,7 +157,35 @@ RadixKeyStore.decryptKey(key, process.env.KEY_PASSWORD as string)
         },
         error: error => logger.error('Error observing application data: ' + JSON.stringify(error, null, 2))
       });
+    
 });
+
+
+async function buyResults(item: any, tokenAmount: number) {
+  const survey = item.survey as Survey;
+  const responses = getSurveyResponses(survey.id);
+  try {
+    logger.info('Making request to random.org...');
+    const req = await axios.get(`https://www.random.org/sequences/?min=0&max=${responses.length - 1}&col=1&format=plain&rnd=new`);
+    const indexes: [] = req.data.split('\n');
+
+    const responseCountToBuy = Math.min(parseInt((tokenAmount / survey.resultPrice).toString()), indexes.length - 1);
+    const selectedResponses = indexes.slice(0, responseCountToBuy).map(x => responses[x]);
+    
+    logger.info(`Sending ${selectedResponses.length} responses...`);
+    item.res.send({ responses: selectedResponses, surveyId: survey.id });
+    item.res.status(200);
+    item.next();
+
+    const indexOfItem = surveysWaitingForResultsPurchase.findIndex(x => x.radixAddress === item.radixAddress && x.survey.id === survey.id);
+    surveysWaitingForResultsPurchase.splice(indexOfItem, 1);
+    const msg = `Purchase of ${selectedResponses.length} responses for "${survey.title}" survey`;
+
+    transferTokens(survey.radixAddress, selectedResponses.length * survey.resultPrice, msg)
+  }
+  catch {}
+    
+}
 
 
 /**
@@ -156,8 +199,13 @@ server.get('/api/surveys', (req, res, next) => {
     .reduce((acc: any, item) => {
       const payload: Payload = JSON.parse(item.payload);
       if (payload.type == AppDataType.Survey) {
-        acc[item.hid] = { ...payload.data, id: item.hid, published: item.timestamp, responseCount: getSurveyResponseCount(item.hid) };
-        acc.items.push(item.hid);
+        const survey = payload.data as Survey;
+
+        if (survey.surveyVisibility === SurveyVisibility.Public) {
+          const surveyPrepared = prepareSurveyData({ ...survey, id: item.hid, published: item.timestamp });
+          acc[surveyPrepared.id] = surveyPrepared;
+          acc.items.push(surveyPrepared.id);
+        }
       }
       return acc;
     }, { items: [] });
@@ -174,8 +222,8 @@ server.get('/api/surveys/:survey_id', (req, res, next) => {
   if (!survey) {
     return next(new errors.NotFoundError());
   }
-  delete survey.resultsPasswordHashed;
-  res.send(survey);
+  const surveyPrepared = prepareSurveyData(survey);
+  res.send(surveyPrepared);
   return next();
 });
 
@@ -189,14 +237,13 @@ server.get('/api/surveys/:survey_id/results', (req, res, next) => {
     return next(new errors.NotFoundError());
   }
 
+  const surveyPrepared = prepareSurveyData(survey);
   if (survey.resultsVisibility === ResultsVisibility.Public) {
-    const response = { survey, responses: getSurveyResponses(req.params.survey_id)};
-    res.send(response);
+    res.send(surveyPrepared);
   }
   else if (bcrypt.compareSync(req.headers.authorization, survey.resultsPasswordHashed)) {
-    delete survey.resultsPasswordHashed;
-    const response = { survey, responses: getSurveyResponses(req.params.survey_id)};
-    res.send(response);
+    surveyPrepared.responses = getSurveyResponses(req.params.survey_id);
+    res.send(surveyPrepared);
   }
   else {
     return next(new errors.UnauthorizedError());
@@ -204,6 +251,22 @@ server.get('/api/surveys/:survey_id/results', (req, res, next) => {
 
   res.status(200);
   return next();
+});
+
+
+server.post('/api/surveys/:survey_id/results', (req, res, next) => {
+  const survey = findSurvey(req.params.survey_id);
+
+  if (!survey) {
+    return next(new errors.NotFoundError());
+  }
+  surveysWaitingForResultsPurchase.push({
+    radixAddress: req.body.radixAddress,
+    survey: survey,
+    req: req,
+    res: res,
+    next: next
+  });
 });
 
 
@@ -228,6 +291,7 @@ server.post('/api/surveys', (req, res, next) => {
       submitSurveyToRadix(survey);
   }
   else {
+    paidSurveysWaitingForTokens.push(survey);
     logger.info(`Added survey (created at: ${survey.created}) to waiting list. ` + 
       `Waiting for a transaction of ${survey.totalReward} ${(radixToken as any).label}`);
   }
@@ -268,20 +332,23 @@ server.post('/api/surveys/:survey_id/answers', (req, res, next) => {
   }
 
   // Answers are valid
-  const answers: Response = { ...req.body, created: new Date().getTime(), surveyId: survey.id };
+  const answers: Response = { ...req.body, surveyId: survey.id };
   logger.debug(`Survey ${survey.id} type: ${survey.surveyType}`);
   
-  switch (survey.winnerSelection) {
-    case WinnerSelection.FirstN: {
-      const answerCount = getSurveyResponseCount(survey.id);
-      logger.debug(`Survey answer count is ${answerCount} and first ${survey.winnerCount} people must be rewarded`);
+  if (survey.surveyType === SurveyType.Paid) {
+    switch (survey.winnerSelection) {
+      case WinnerSelection.FirstN: {
+        const answerCount = getSurveyResponses(survey.id).length;
+        logger.debug(`Survey answer count is ${answerCount} and first ${survey.winnerCount} people must be rewarded`);
 
-      if (answerCount <= survey.winnerCount) {
-        transferTokens(answers.radixAddress, survey.totalReward / survey.winnerCount);
+        if (answerCount <= survey.winnerCount) {
+          const msg = `Reward for participation in "${survey.title}" survey`;
+          transferTokens(answers.radixAddress, survey.totalReward / survey.winnerCount, msg);
+        }
       }
+      default:
+        break;
     }
-    default:
-      break;
   }
 
   submitAnswersToRadix(answers);
@@ -306,8 +373,6 @@ server.get('/*', restify.plugins.serveStatic({
 function testAnswersAgainstSurvey(answers: Response, survey: Survey) {
   return true;
 }
-
-const waitingSurveys: Survey[] = [];
 
 /** Encapsulates and submits user survey */
 function submitSurveyToRadix(survey: Survey) {
@@ -347,11 +412,11 @@ function submitToRadix(payload: Payload) {
     });
 }
 
-function transferTokens(userAddress: string, amount: number) {
+function transferTokens(userAddress: string, amount: number, message: string) {
   logger.info(`Transferring ${amount} ${(radixToken as any).label} to address ${userAddress}...`);
-  const userAccount = RadixAccount.fromAddress(userAddress, true);
+  const toAccount = RadixAccount.fromAddress(userAddress, true);
   RadixTransactionBuilder
-    .createTransferAtom(identity.account, userAccount, radixToken, amount)
+    .createTransferAtom(identity.account, toAccount, radixToken, amount, message)
     .signAndSubmit(identity)
     .subscribe({
       next: state => {
@@ -376,7 +441,31 @@ function findSurvey(surveyId: string): Survey|null {
     return null;
   }
 
-  return { ...JSON.parse(item.payload).data, id: item.hid };
+  const survey = JSON.parse(item.payload).data as Survey;
+
+  return { ...survey, id: item.hid, published: item.timestamp };
+}
+
+function prepareSurveyData(surveyToPrepare: Survey): Survey {
+  const survey = { ...surveyToPrepare };
+  delete survey.resultsPasswordHashed;
+
+  const responses = getSurveyResponses(survey.id);
+  
+  survey.totalResponses = responses.length;
+  if (responses.length === 0) {
+    survey.firstResponse = null;
+    survey.lastResponse = null;
+  }
+  else {
+    survey.firstResponse = responses.reduce((acc, response) => Math.min(response.created, acc), responses[0].created);
+    survey.lastResponse = responses.reduce((acc, response) => Math.max(response.created, acc), responses[0].created);
+  }
+
+  if (survey.resultsVisibility === ResultsVisibility.Public) {
+    survey.responses = responses;
+  }
+  return survey;
 }
 
 /**
@@ -389,13 +478,6 @@ function getSurveyResponses(surveyId: string): Response[] {
     }
     return acc;
   }, []);
-}
-
-/**
- * Counts number of submitted answers for given survey.
- */
-function getSurveyResponseCount(surveyId: string): number {
-  return getSurveyResponses(surveyId).length;
 }
 
 const ajv = Ajv({ allErrors: true });
