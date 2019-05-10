@@ -501,7 +501,8 @@ const questionValidationSchema = Yup.object().shape({
   questionText: Yup.string().trim().required('Write text for the question or delete the question')
 });
 
-const winnerCountTypeErrorMsg = 'Winner count must be a positive whole number';
+/* eslint-disable no-template-curly-in-string */
+// const winnerCountTypeErrorMsg = 'Winner count must be a positive whole number';
 const winnerCountRequiredErrorMsg = 'Winner count is required';
 const winnerCountMinErrorMsg = 'There must be at least ${min} winner';
 const winnerCountMaxErrorMsg = 'There cannot be more than ${max} winners';

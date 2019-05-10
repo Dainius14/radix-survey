@@ -39,7 +39,7 @@ class BuyResults extends React.Component {
   }
 
   render() {
-    const { survey, isLoading, error } = this.props;
+    const { survey, isLoading } = this.props;
     
     if (isLoading) {
       return (

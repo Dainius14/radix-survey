@@ -340,7 +340,7 @@ const PasswordForm = Form.create({ name: 'password_form' })(
   // eslint-disable-next-line
   class extends React.Component {
     render() {
-      const { visible, onCancel, onSubmit, form, survey } = this.props;
+      const { visible, onCancel, onSubmit, form } = this.props;
       const { getFieldDecorator } = form;
       return (
         <Modal
@@ -355,7 +355,7 @@ const PasswordForm = Form.create({ name: 'password_form' })(
               {getFieldDecorator('password', {
                 rules: [{ required: true, message: 'Please input a password!' }],
               })(
-                <Input.Password onKeyDown={(e)=> e.keyCode == 13 && onSubmit()} />
+                <Input.Password onKeyDown={(e)=> e.keyCode === 13 && onSubmit()} />
               )}
             </Form.Item>
           </Form>

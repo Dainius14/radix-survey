@@ -5,7 +5,6 @@ import { List, Typography, Icon, Divider } from 'antd';
 import * as SurveyListActions from '../../actions/SurveyListActions';
 import '../../styles/MultilineCode.css';
 import '../../styles/SurveyList.css';
-import { WinnerSelection } from '../../constants';
 import Paragraph from 'antd/lib/typography/Paragraph';
 const { Text } = Typography;
 
@@ -84,23 +83,7 @@ function getRewardForUser(survey) {
   if (survey.surveyType === 'free') {
     return 'Free';
   }
-
-  let reward = '';
-  switch (survey.winnerSelection) {
-    case WinnerSelection.FirstN:
-      reward = roundToPrecision(survey.totalReward / survey.firstNCount, 2);
-      break;
-    case WinnerSelection.RandomNAfterTime:
-      reward = roundToPrecision(survey.totalReward / survey.randomNCount, 2);
-      break;
-    case WinnerSelection.RandomNAfterMParticipants:
-      reward = roundToPrecision(survey.totalReward / survey.firstNCount, 2);
-      break;
-    default:
-      break;
-  }
-
-  return reward + ' Rads';
+  return roundToPrecision(survey.totalReward / survey.winnerCount, 2) + ' Rads';
 }
 
 function roundToPrecision(number, precision) {

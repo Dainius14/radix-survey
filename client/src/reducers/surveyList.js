@@ -1,6 +1,5 @@
 import * as Actions from '../actions/SurveyListActions';
 import update from 'immutability-helper';
-import { history } from '../utilities';
 
 const initialState = {
   isLoading: true,
@@ -129,10 +128,10 @@ const surveys = (state = initialState, action) => {
 
     case Actions.BUY_SURVEY_RESULTS_REQUEST: {
       return state;
-      return update(state, {
-        isLoading: {$set: false},
-        error: {$set: action.error}
-      });
+      // return update(state, {
+      //   isLoading: {$set: false},
+      //   error: {$set: action.error}
+      // });
     }
     case Actions.BUY_SURVEY_RESULTS_SUCCESS: {
       const { data } = action;
@@ -151,10 +150,10 @@ const surveys = (state = initialState, action) => {
 
     case Actions.BUY_SURVEY_RESULTS_ERROR: {
       return state;
-      return update(state, {
-        isLoading: {$set: false},
-        error: {$set: action.error}
-      });
+      // return update(state, {
+      //   isLoading: {$set: false},
+      //   error: {$set: action.error}
+      // });
     }
 
     case Actions.CLOSE_PASSWORD_DIALOG: {

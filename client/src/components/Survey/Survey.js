@@ -1,7 +1,6 @@
 import React from 'react';
 import { connect } from 'react-redux';
-import { NavLink } from 'react-router-dom';
-import { Form, Divider, Button, Spin, Input, Radio, Checkbox, Typography, message, Row } from 'antd';
+import { Form, Button, Spin, Input, Radio, Checkbox, Typography, message, Row } from 'antd';
 import * as SurveyListActions from '../../actions/SurveyListActions';
 import '../../styles/MultilineCode.css';
 import '../../styles/RequiredAsteriskAfter.css';
@@ -28,7 +27,7 @@ class Survey extends React.Component {
         // Put radio answers into array
         const response = {
           answers: Object.keys(values).reduce((acc, key) => {
-            if (key == 'radixAddress') return acc;
+            if (key === 'radixAddress') return acc;
 
             if (survey.questions[key].type === 'radio')
               acc[key] = [ values[key] ];

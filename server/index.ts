@@ -9,6 +9,7 @@ import axios from 'axios';
 import key from './key.json';
 import { newSurvey, surveyAnswers } from './jsonSchemas';
 import { Survey, Response, AppData, Payload, AppDataType, WinnerSelection, ResultsVisibility, SurveyType, SurveyVisibility } from './types';
+import { existsSync } from 'fs';
 
 // Setup logging
 const logger = winston.createLogger({
@@ -26,8 +27,6 @@ const logger = winston.createLogger({
 
 const server: restify.Server = restify.createServer();
 
-// Skip some things in production
-if (process.env.NODE_ENV != 'production') {
   logger.add(new winston.transports.Console({
     format: format.combine(
       format.timestamp({ format: 'HH:mm:ss' }),
@@ -42,6 +41,8 @@ if (process.env.NODE_ENV != 'production') {
   )}));
 
 
+// Skip some things in production
+if (process.env.NODE_ENV != 'production') {
   const corsMiddleware = require('restify-cors-middleware');
   const cors = corsMiddleware({ allowHeaders: ['Content-Type', 'Authorization'] });
   server.pre(cors.preflight);
@@ -144,8 +145,14 @@ RadixKeyStore.decryptKey(key, process.env.KEY_PASSWORD as string)
       .subscribe({
         next: item => {
           const data = item.data;
-          const payload: Payload = JSON.parse(data.payload);
-          logger.info(`Received new ${payload.type} (created at: ${payload.data.created}). Radix ID: ${data.hid}.`);
+          let payload: any;
+          try {
+            payload = JSON.parse(data.payload);
+          }
+          catch {
+            return
+          }
+          logger.info(`Received new ${payload.type} (created at: ${data.timestamp}). Radix ID: ${data.hid}.`);
 
           const waitingResponse = surveysWaitingForId[payload.data.created];
           if (waitingResponse && waitingResponse.title === (payload.data as Survey).title) {
@@ -187,12 +194,11 @@ async function buyResults(item: any, tokenAmount: number) {
     
 }
 
-
 /**
  * Returns a list of surveys.
  */
 server.get('/api/surveys', (req, res, next) => {
-  const surveys = account.dataSystem.applicationData.get(process.env.APP_ID as string).values()
+  const surveys = getAppData()
     .sort((a, b) => {
       return b.timestamp - a.timestamp;
     })
@@ -358,13 +364,6 @@ server.post('/api/surveys/:survey_id/answers', (req, res, next) => {
 });
 
 
-/**
- * Serve React
- */
-server.get('/*', restify.plugins.serveStatic({
-  directory: './public',
-  default: 'index.html'
-}));
 
 /**
  * Takes survey of given answers and checks if answers are valid for given questions
@@ -407,7 +406,7 @@ function submitToRadix(payload: Payload) {
         logger.info(`${capitalizedType} (created at: ${payload.data.created}) successfully submitted`);
       },
       error: error => {
-        logger.error(`Error submitting ${payload.type} to Radix: `, error);
+        logger.error(`Error submitting ${payload.type} to Radix: ${error}`);
       }
     });
 }
@@ -433,7 +432,7 @@ function transferTokens(userAddress: string, amount: number, message: string) {
 
 
 function findSurvey(surveyId: string): Survey|null {
-  const item = account.dataSystem.applicationData.get(process.env.APP_ID as string).values().find(item => {
+  const item = getAppData().find(item => {
     return item.hid === surveyId;
   });
 
@@ -471,13 +470,22 @@ function prepareSurveyData(surveyToPrepare: Survey): Survey {
 /**
  */
 function getSurveyResponses(surveyId: string): Response[] {
-  return account.dataSystem.applicationData.get(process.env.APP_ID as string).values().reduce((acc: Response[], item) => {
+  return getAppData().reduce((acc: Response[], item) => {
     const payload: Payload = JSON.parse(item.payload);
     if (payload.type == AppDataType.Answers && (payload.data as Response).surveyId == surveyId) {
-      acc.push(payload.data as Response);
+      acc.push({ ...payload.data, created: item.timestamp } as Response);
     }
     return acc;
   }, []);
+}
+
+function getAppData(): RadixApplicationData[] {
+  const appData = account.dataSystem.applicationData.get(process.env.APP_ID as string);
+  if (appData) {
+    return appData.values();
+  }
+  return [];
+
 }
 
 const ajv = Ajv({ allErrors: true });
@@ -485,7 +493,7 @@ const testNewSurvey = ajv.compile(newSurvey);
 const testSurveyAnswers = ajv.compile(surveyAnswers);
 
 
-server.listen(8080, function () {
+server.listen(process.env.PORT, function () {
   logger.info(`${server.name} listening at ${server.url}`);
   logger.info(`Current Application ID: ${process.env.APP_ID}`);
 });
