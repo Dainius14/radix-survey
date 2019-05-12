@@ -56,7 +56,7 @@ describe('RadixAPI', async () => {
 
       describe('getData()', () => {
         it('should return an object', async () => {
-          returnedData[x] = await radixApi.getData(ids[x]);
+          returnedData[x] = await radixApi.getDataById(ids[x]);
           assert.strictEqual(typeof returnedData[x], 'object');
         });
 

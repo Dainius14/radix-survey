@@ -1,20 +1,6 @@
-export interface AppData {
+export interface Survey {
   id: string;
   created: number;
-}
-
-export interface Payload {
-  type: AppDataType;
-  data: AppData;
-}
-
-export enum AppDataType {
-  Survey = 'survey',
-  Answers = 'answers'
-}
-
-export interface Survey extends AppData {
-  shortId: string;
   published: number;
   title: string;
   description: string;
@@ -72,7 +58,9 @@ export interface AnswerChoice {
   answerText: string;
 }
 
-export interface Response extends AppData {
+export interface Response {
+  id: string;
+  created: number;
   surveyId: string;
   radixAddress: string;
   answers: {};

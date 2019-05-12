@@ -1,22 +1,19 @@
 import { radixUniverse, RadixUniverse, RadixLogger, RadixKeyStore, RadixSimpleIdentity, RadixAtom, RadixTransactionBuilder, RadixNEDBAtomCache, radixTokenManager, RadixAccount, RadixApplicationData, RadixKeyPair, RadixTokenClass } from 'radixdlt';
 import logger from './logger';
 import nanoid from 'nanoid';
+import { Survey, Response } from './types';
 
 
 export default class RadixAPI {
   public readonly appID: string;
   public readonly token: RadixTokenClass;
   public readonly tokenLabel: string;
-  private readonly cacheFilePath: string;
 
   private identity!: RadixSimpleIdentity;
   private account!: RadixAccount;
 
-  // private submittedData: []
-  
-
-  constructor(appID: string, cacheFilePath: string, radixLoggerLevel: string = 'warn') {
-    this.cacheFilePath = 'E:\\radix-survey-bakis\\server\\cache.db';
+  constructor(appID: string, radixLoggerLevel: string = 'warn') {
+    logger.info(`radix  [App ID: ${appID}]`);
     this.appID = appID;
 
     RadixLogger.setLevel(radixLoggerLevel);  // Available levels: trace/debug/info/warn/error
@@ -29,7 +26,7 @@ export default class RadixAPI {
     const keyPair = await RadixKeyStore.decryptKey(key, password);
     this.identity = new RadixSimpleIdentity(keyPair);
     this.account = this.identity.account;
-    this.account.enableCache(new RadixNEDBAtomCache(this.cacheFilePath));
+    this.account.enableCache(new RadixNEDBAtomCache('./cache.db'));
     this.account.openNodeConnection();
     this.subscribeToDataSystem();
     this.subscribeToTransferSystem();
@@ -99,15 +96,14 @@ export default class RadixAPI {
 
   /**
    * Given an object, splits it into smaller parts (if needed) and submits it to the ledger.
-   * @param givenData an object to be stored on the ledger
+   * @param data an object to be stored on the ledger
    * @returns ID of the object once all of its part are stored
    */
-  async submitData(givenData: object): Promise<string> {
-    if ((givenData as any).id) throw new Error('Object should not have an ID property');
+  async submitData(data: object, type: 'survey'|'response'): Promise<string> {
+    if ((data as any).id) throw new Error('Data should not have an ID property');
 
     const id = nanoid();
-    const data = { ...givenData, id };
-    const json = JSON.stringify(data);
+    const json = JSON.stringify({ ...data, id });
     
     // Split JSON string into 900 Byte parts
     const jsonParts = [];
@@ -129,7 +125,7 @@ export default class RadixAPI {
     // <id>$<001>$<data>.
     // With 999 part should hold around 868 kB of data.
     const prepedJsonParts = jsonParts.map((part, index) => {
-      const partId = `${id}$${index.toString().padStart(3, '0')}$`;
+      const partId = `${id}$${index.toString().padStart(3, '0')}$${type}$`;
       return partId + part;
     });
 
@@ -137,14 +133,35 @@ export default class RadixAPI {
     return id;
   }
 
-  getData(id: string) {
-    const filteredAtoms = this.getAppData()
-      .filter(x => x.payload.split('$', 1)[0] === id)
-      .map(x => x.payload.split('$', 3))
-    const sortedAtoms = filteredAtoms
+  getDataByType(type: 'survey'|'response') {
+    return this.getAppData()
+      .map(x => x.payload.split('$', 4))
+      .filter(x => x[2] === type)
       .sort((a, b) => parseInt(a[1]) - parseInt(b[1]))
-    const dataStr = sortedAtoms
-      .map(x => x[2])
+      .reduce((acc: any, x) => {
+        const id = x[0];
+        if (!acc[id]) acc[id] = '';
+        acc[id] += x[3];
+        return acc;
+      }, {});
+  }
+
+  getSurveys() {
+    return Object.values(this.getDataByType('survey'))
+      .map((x) => JSON.parse(x as string) as Survey);
+  }
+
+  getResponses() {
+    return Object.values(this.getDataByType('response'))
+      .map((x) => JSON.parse(x as string) as Response);
+  }
+
+  getDataById(id: string) {
+    const dataStr = this.getAppData()
+      .map(x => x.payload.split('$', 4))
+      .filter(x => x[0] === id)
+      .sort((a, b) => parseInt(a[1]) - parseInt(b[1]))
+      .map(x => x[3])
       .join('');
     try {
       return JSON.parse(dataStr);
@@ -252,92 +269,4 @@ export default class RadixAPI {
     }
     return [];
   }
-
 }
-
-
-
-// RadixKeyStore.decryptKey(key, process.env.KEY_PASSWORD as string)
-//   .then((keyPair: RadixKeyPair) => {
-//     account.enableCache(new RadixNEDBAtomCache('./cache.db'));
-//     account.openNodeConnection();
-//     logger.info('Account address: ' + account.getAddress());
-
-//     // Subscribe for all previous transactions as well as new ones
-//     account.transferSystem.getAllTransactions().subscribe(transactionUpdate => {
-//       logger.debug('Received transaction update:', transactionUpdate);
-
-//       const transaction = transactionUpdate.transaction;
-//       if (!transaction) {
-//         logger.error('Received transaction is empty:', transactionUpdate);
-//         return;
-//       }
-
-//       const participants: string[] = Object.values(transaction.participants);
-//       if (participants.length === 0) {
-//         logger.error('Received transaction with no participants:', transactionUpdate);
-//         return;
-//       }
-
-//       const balance = radixToken.toTokenUnits((transaction.balance as any)[radixToken.id.toString()])
-//       if (participants.length > 1) {
-//         logger.warn('There is more than one participant:', transactionUpdate);
-//       }
-      
-
-
-//       // Buy results
-//       const transactionFrom = participants[0];
-//       logger.info(`Received a transaction of ${balance} ${(radixToken as any).label} from ${transactionFrom}`);
-      
-//       const waitingForPurchase = surveysWaitingForResultsPurchase.find((x: any) => transactionFrom.startsWith(x.radixAddress));
-//       if (waitingForPurchase) {
-//         logger.info(`There is a survey '${waitingForPurchase.survey.title}' waiting for its results to be bought`);
-//         buyResults(waitingForPurchase, balance);
-//       }
-
-
-
-//       // Publish paid survey
-//       const paidSurveyWaitingForTokens = paidSurveysWaitingForTokens.find((x: any) => transactionFrom.startsWith(x.radixAddress));
-//       if (paidSurveyWaitingForTokens) {
-//         const survey = paidSurveyWaitingForTokens;
-//         logger.info(`Found survey '${survey.title}' waiting for a transaction of ${survey.totalReward}`);
-
-//         if (balance >= survey.totalReward) {
-//           logger.info(`Received tokens are sufficient`);
-//           submitSurveyToRadix(survey);
-//         }
-//         else {
-//           logger.info(`Received ${balance} tokens are not sufficient (required ${survey.totalReward})`);
-//         }
-//       }
-//     });
-
-
-//     // Subscribe to all data
-//     account.dataSystem.getApplicationData(process.env.APP_ID as string)
-//       .subscribe({
-//         next: item => {
-//           const data = item.data;
-//           let payload: any;
-//           try {
-//             payload = JSON.parse(data.payload);
-//           }
-//           catch {
-//             return
-//           }
-//           logger.info(`Received new ${payload.type} (created at: ${data.timestamp}). Radix ID: ${data.hid}.`);
-
-//           const waitingResponse = surveysWaitingForId[payload.data.created];
-//           if (waitingResponse && waitingResponse.title === (payload.data as Survey).title) {
-//             logger.info('Found request waiting for response');
-//             waitingResponse.res.send({ id: data.hid });
-//             waitingResponse.next();
-//             delete surveysWaitingForId[payload.data.created];
-//           }
-//         },
-//         error: error => logger.error('Error observing application data: ' + JSON.stringify(error, null, 2))
-//       });
-    
-// });

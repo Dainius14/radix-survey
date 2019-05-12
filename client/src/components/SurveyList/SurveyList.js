@@ -54,7 +54,7 @@ class SurveyList extends React.Component {
                     <List.Item.Meta
                       title={<Link to={`/surveys/${survey.id}`}>{survey.title}</Link>}
                       description={<>
-                        <IconText type="calendar" text={getFormattedTime(survey.published)} />
+                        <IconText type="calendar" text={getFormattedTime(survey.created)} />
                         <IconText type="bars" text={`${survey.questions.length} questions`} />
                         <IconText type="dollar" text={getRewardForUser(survey)} />
                         <IconText type="bar-chart" text={`${survey.totalResponses} responses`} />

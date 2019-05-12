@@ -91,7 +91,7 @@ class Survey extends React.Component {
           }
           >
           <Row>
-            <DescriptionItem label="Survey created">{formatDate(survey.published)}</DescriptionItem>
+            <DescriptionItem label="Survey created">{formatDate(survey.created)}</DescriptionItem>
             <DescriptionItem label="Survey type">{survey.surveyType[0].toUpperCase() + survey.surveyType.substr(1)}</DescriptionItem>
             {survey.surveyType === SurveyType.Paid && <>
             <DescriptionItem label="Winner selection">

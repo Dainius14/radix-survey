@@ -4,7 +4,7 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "test": "set NODE_ENV=test&& mocha -r ts-node/register -r dotenv/config tests/**/*.spec.ts",
+    "test": "set NODE_ENV=test&& set APP_ID=dd-testing-7&& mocha -r ts-node/register -r dotenv/config tests/**/*.spec.ts",
     "start": "nodemon",
     "build": "tsc --skipLibCheck"
   },

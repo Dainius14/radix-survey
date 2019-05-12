@@ -6,7 +6,7 @@
 // Required properties are defined in "required" array for each entity.
 // Property types and other attributes for it are defined in "properties" for each property
 
-export const newSurvey = {
+export const surveySchema = {
   "type": "object",
   "required": [
     "title",
@@ -160,7 +160,7 @@ export const newSurvey = {
   }
 };
 
-export const surveyAnswers = {
+export const responseSchema = {
   "type": "object",
   "additionalProperties": false,
   "required": [

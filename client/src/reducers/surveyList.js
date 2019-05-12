@@ -22,11 +22,20 @@ const surveys = (state = initialState, action) => {
     }
 
     case Actions.GET_SURVEYS_SUCCESS: {
+      const items = action.data.map(x => x.id);
+      const surveyMap = action.data.reduce((acc, x) => {
+        acc[x.id] = x;
+        return acc;
+      }, {});
+
       return update(state, {
         error: {$set: null},
         isLoading: {$set: false},
         allLoaded: {$set: true},
-        data: {$set: action.data}
+        data: {
+          $merge: surveyMap,
+          items: {$set: items}
+        }
       });
     }
 
