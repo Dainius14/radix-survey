@@ -11,6 +11,11 @@ const logger = winston.createLogger({
     new transports.File({ dirname: 'logs', filename: 'error.log', level: 'error' }),
     new transports.File({ dirname: 'logs', filename: 'log.log' }),
     
+  ]
+});
+
+if (process.env.NODE_ENV !== 'test') {
+  logger.add(
     new winston.transports.Console({
       format: format.combine(
         format.timestamp({ format: 'HH:mm:ss' }),
@@ -23,7 +28,7 @@ const logger = winston.createLogger({
         }
       )
     )})
-  ]
-});
+  );
+}
 
 export default logger

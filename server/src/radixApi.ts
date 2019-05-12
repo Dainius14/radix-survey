@@ -103,8 +103,8 @@ export default class RadixAPI {
    * @returns ID of the object once all of its part are stored
    */
   async submitData(givenData: object): Promise<string> {
-    if ((givenData as any).id)
-      throw new Error('Object should not have an ID property')
+    if ((givenData as any).id) throw new Error('Object should not have an ID property');
+
     const id = nanoid();
     const data = { ...givenData, id };
     const json = JSON.stringify(data);
@@ -135,13 +135,6 @@ export default class RadixAPI {
 
     await Promise.all(prepedJsonParts.map(async x => await this.submitDataAtom(x)));
     return id;
-
-  //   prepedJsonParts.forEach(x => {
-      
-  //     this.storeDataAtom(x.str,
-  //       () => x.complete = true,
-  //       (error) => {});
-  //   });
   }
 
   getData(id: string) {
