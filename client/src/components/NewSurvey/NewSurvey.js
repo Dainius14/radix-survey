@@ -7,7 +7,7 @@ import '../../styles/RequiredAsteriskAfter.css';
 import '../../styles/AntFormItemLabelHeight.css';
 import '../../styles/AntFormItemNoBottomMargin.css';
 import QuestionList from './QuestionList';
-import { WinnerSelection, ResultsVisibility, SurveyVisibility, SurveyType } from '../../constants';
+import { WinnerSelection, ResponseVisibility, SurveyVisibility, SurveyType } from '../../constants';
 import { request } from '../../utilities';
 import QRCode from 'qrcode.react';
 const { Text, Paragraph, Title } = Typography;
@@ -68,29 +68,29 @@ function NewSurveyForm({ values, ...form }) {
         }}
       </Field>
 
-      <Field name="resultsVisibility">
+      <Field name="responseVisibility">
         {({ field, form }) => {
           return (
-            <AntForm.Item label="Results visibility" className="form-item-required form-item-no-bottom-margin">
+            <AntForm.Item label="Response visibility" className="form-item-required form-item-no-bottom-margin">
               <Radio.Group value={field.value}
                 onChange={e => { form.setFieldValue(field.name, e.target.value); form.setFieldTouched(field.name, true); }}>
 
-                <Radio value={ResultsVisibility.Public}>
+                <Radio value={ResponseVisibility.Public}>
                   <Text>Public</Text>&nbsp;
-                  <Tooltip title={<><u>Everyone</u> will be able to see the answers</>}>
+                  <Tooltip title={<><u>Everyone</u> will be able to see the responses</>}>
                     <Icon type="question-circle-o" />
                   </Tooltip>
                 </Radio>
-                <Radio value={ResultsVisibility.Private}>
+                <Radio value={ResponseVisibility.Private}>
                   <Text>Private</Text>&nbsp;
-                    <Tooltip title={<><u>Only you</u> will able to see the answers with your password</>}>
+                    <Tooltip title={<><u>Only you</u> will able to see the responses with your password</>}>
                     <Icon type="question-circle-o" />
                   </Tooltip>
                 </Radio>
-                <Radio value={ResultsVisibility.PrivateForSale}>
+                <Radio value={ResponseVisibility.PrivateForSale}>
                   <Text>Private and for sale</Text>&nbsp;
-                  <Tooltip title={<><u>You</u> will be able to see the answers with your password and <u>other people</u> will
-                    be able to buy some of the answers for your specified price</>}>
+                  <Tooltip title={<><u>You</u> will be able to see the responses with your password and <u>other people</u> will
+                    be able to buy some of the responses for your specified price</>}>
                     <Icon type="question-circle-o" />
                   </Tooltip>
                 </Radio>
@@ -101,16 +101,16 @@ function NewSurveyForm({ values, ...form }) {
         }}
       </Field>
 
-      {values.resultsVisibility !== ResultsVisibility.Public &&
+      {values.responseVisibility !== ResponseVisibility.Public &&
         <>
-          <FastField component={FormikInputPassword} name="resultsPassword" label="Password" required
+          <FastField component={FormikInputPassword} name="responsePassword" label="Password" required
             placeholder="Password to access results of your survey" type="password" />
 
-          {values.resultsVisibility === ResultsVisibility.PrivateForSale &&
+          {values.responseVisibility === ResponseVisibility.PrivateForSale &&
             <>
               <FastField
                 component={FormikInputNumber}
-                name="resultPrice"
+                name="responsePrice"
                 label={<>
                   Price for one answer&nbsp;
                   <Tooltip title="This is the price the person buying answers of your survey will pay for one answer">
@@ -386,15 +386,15 @@ async function handleSubmit(values, form, history) {
     title: values.title,
     description: values.description,
     surveyVisibility: values.surveyVisibility,
-    resultsVisibility: values.resultsVisibility,
+    responseVisibility: values.responseVisibility,
     surveyType: values.surveyType
   }
 
-  if (values.resultsVisibility !== ResultsVisibility.Public) {
-    survey.resultsPassword = values.resultsPassword;
+  if (values.responseVisibility !== ResponseVisibility.Public) {
+    survey.responsePassword = values.responsePassword;
 
-    if (values.resultsVisibility === ResultsVisibility.PrivateForSale) {
-      survey.resultPrice = values.resultPrice;
+    if (values.responseVisibility === ResponseVisibility.PrivateForSale) {
+      survey.responsePrice = values.responsePrice;
       survey.radixAddress = values.radixAddress;
     }
   }
@@ -476,9 +476,9 @@ const initialValues = {
 
   surveyType: 'free',
 
-  resultsVisibility: ResultsVisibility.Public,
-  resultsPassword: '',
-  resultPrice: 0,
+  responseVisibility: ResponseVisibility.Public,
+  responsePassword: '',
+  responsePrice: 0,
 
   winnerSelection: WinnerSelection.FirstN,
   
@@ -524,15 +524,15 @@ const validationSchema = Yup.object().shape({
   description: Yup.string().trim().required('Your survey must have a description').max(500),
 
   surveyVisibility: Yup.string().required(),
-  resultsVisibility: Yup.string().required(),
+  responseVisibility: Yup.string().required(),
   surveyType: Yup.string().required(),
 
 
-  resultsPassword: Yup.string().when('resultsVisibility', (resultsVisibility, schema) => resultsVisibility !== ResultsVisibility.Public ?
-    schema.required('Enter a password or make results public').max(50, 'Password cannot be longer than ${max} symbols') :
+  responsePassword: Yup.string().when('responseVisibility', (responseVisibility, schema) => responseVisibility !== ResponseVisibility.Public ?
+    schema.required('Enter a password or make responses public').max(50, 'Password cannot be longer than ${max} symbols') :
     schema.notRequired()),
 
-  resultPrice: Yup.number().when('resultsVisibility', (resultsVisibility, schema) => resultsVisibility === ResultsVisibility.PrivateForSale ?
+  responsePrice: Yup.number().when('responseVisibility', (responseVisibility, schema) => responseVisibility === ResponseVisibility.PrivateForSale ?
     schema.required('Enter a price or choose another visibility option').positive('Price must be bigger than 0').max(10000, 'Price cannot be bigger than ${max} Rads') :
     schema.notRequired()),
 
@@ -599,8 +599,8 @@ const validationSchema = Yup.object().shape({
         .required('Total reward is required')
     }),
 
-  radixAddress: Yup.string().when(['surveyType', 'resultsVisibility'], (surveyType, resultsVisibility, schema) => {
-    if (surveyType === SurveyType.Free && resultsVisibility !== ResultsVisibility.PrivateForSale) 
+  radixAddress: Yup.string().when(['surveyType', 'responseVisibility'], (surveyType, responseVisibility, schema) => {
+    if (surveyType === SurveyType.Free && responseVisibility !== ResponseVisibility.PrivateForSale) 
       return schema.notRequired();
     return schema.length(51, 'Radix account address is 51 characters long').required('RadixDLT account address is required')
   }),

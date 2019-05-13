@@ -1,12 +1,10 @@
 
-import bcrypt from 'bcrypt';
 import logger from './logger';
 import RadixAPI from './radixApi';
 import key from '../key.json'
 import restify from 'restify';
-import { InvalidContentError, NotFoundError, BadRequestError } from 'restify-errors';
-import { SurveyVisibility, Survey, ResultsVisibility, SurveyType, Response } from './types';
-import SurveyController from './surveyController';
+import { InvalidContentError, NotFoundError, BadRequestError, UnauthorizedError } from 'restify-errors';
+import SurveyController, { ItemNotFoundError, WrongResponsesPasswordError, InvalidResponseFormatError } from './surveyController';
 
 const server = restify.createServer();
 
@@ -14,8 +12,8 @@ const server = restify.createServer();
 /**
  * Returns survey list.
  */
-server.get('/api/surveys', (req, res, next) => {
-  res.send(surveyController.getPublicSurveys());
+server.get('/api/surveys', async (req, res, next) => {
+  res.send(await surveyController.getPublicSurveys());
   return next();
 });
 
@@ -23,13 +21,18 @@ server.get('/api/surveys', (req, res, next) => {
 /**
  * Returns a single survey. 
  */
-server.get('/api/surveys/:survey_id', (req, res, next) => {
-  const survey = surveyController.getSurveyById(req.params.survey_id);
-  if (!survey) {
-    return next(new NotFoundError());
+server.get('/api/surveys/:survey_id', async (req, res, next) => {
+  try {
+    const survey = await surveyController.getSurveyById(req.params.survey_id);
+    res.send(survey);
+    return next();
   }
-  res.send(survey);
-  return next();
+  catch (error) {
+    if (error instanceof ItemNotFoundError) {
+      return next(new NotFoundError(error.message));
+    }
+    else throw error;
+  }
 });
 
 /**
@@ -39,13 +42,50 @@ server.post('/api/surveys', async (req, res, next) => {
   try {
     const id = await surveyController.createSurvey(req.body);
     res.send({ id });
-    next();
+    return next();
   }
   catch (error) {
     if (error instanceof RangeError) {
       logger.warn(`server.post./api/surveys.invalid_survey  [Error: ${error.message}]`);
       return next(new BadRequestError(error.message));
     }
+    else throw error;
+  }
+});
+
+
+server.get('/api/surveys/:survey_id/responses', async (req, res, next) => {
+  try {
+    const survey = await surveyController.getSurveyById(req.params.survey_id as string, req.headers.authorization);
+    res.send(survey);
+    return next();
+  }
+  catch (error) {
+    if (error instanceof ItemNotFoundError) {
+      return next(new NotFoundError(error.message));
+    }
+    if (error instanceof WrongResponsesPasswordError) {
+      return next(new UnauthorizedError(error.message));
+    }
+    else throw error;
+  }
+});
+
+server.post('/api/surveys/:survey_id/responses', async (req, res, next) => {
+  try {
+    await surveyController.createResponse(req.params.survey_id as string, req.body);
+    res.status(204);
+    res.send();
+    return next();
+  }
+  catch (error) {
+    if (error instanceof ItemNotFoundError) {
+      return next(new NotFoundError(error.message));
+    }
+    if (error instanceof InvalidResponseFormatError) {
+      return next(new BadRequestError(error.message));
+    }
+    else throw error;
   }
 });
 

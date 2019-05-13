@@ -12,7 +12,7 @@ export const surveySchema = {
     "title",
     "description",
     "surveyVisibility",
-    "resultsVisibility",
+    "responseVisibility",
     "surveyType",
     "questions"
   ],
@@ -36,19 +36,19 @@ export const surveySchema = {
         "private"
       ]
     },
-    "resultsVisibility": {
+    "responseVisibility": {
       "enum": [
         "public",
         "private",
         "privateForSale"
       ]
     },
-    "resultsPassword": {
+    "responsePassword": {
       "type": "string",
       "minLength": 0,
       "maxLength": 1000
     },
-    "resultPrice": {
+    "responsePrice": {
       "type": "number",
       "min": 0
     },

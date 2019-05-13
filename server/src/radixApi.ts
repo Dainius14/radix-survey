@@ -1,7 +1,8 @@
-import { radixUniverse, RadixUniverse, RadixLogger, RadixKeyStore, RadixSimpleIdentity, RadixAtom, RadixTransactionBuilder, RadixNEDBAtomCache, radixTokenManager, RadixAccount, RadixApplicationData, RadixKeyPair, RadixTokenClass } from 'radixdlt';
+import { radixUniverse, RadixUniverse, RadixLogger, RadixKeyStore, RadixSimpleIdentity, RadixTransactionBuilder, RadixNEDBAtomCache, radixTokenManager, RadixAccount, RadixApplicationData, RadixTokenClass, RadixTransactionUpdate } from 'radixdlt';
 import logger from './logger';
 import nanoid from 'nanoid';
 import { Survey, Response } from './types';
+import { Subject } from 'rxjs';
 
 
 export default class RadixAPI {
@@ -11,6 +12,8 @@ export default class RadixAPI {
 
   private identity!: RadixSimpleIdentity;
   private account!: RadixAccount;
+
+  public transactionSubject!: Subject<RadixTransactionUpdate>;
 
   constructor(appID: string, radixLoggerLevel: string = 'warn') {
     logger.info(`radix  [App ID: ${appID}]`);
@@ -28,8 +31,10 @@ export default class RadixAPI {
     this.account = this.identity.account;
     this.account.enableCache(new RadixNEDBAtomCache('./cache.db'));
     this.account.openNodeConnection();
-    this.subscribeToDataSystem();
-    this.subscribeToTransferSystem();
+    // this.subscribeToDataSystem();
+    // this.subscribeToTransferSystem();
+
+    this.transactionSubject = this.account.transferSystem.transactionSubject;
     logger.info('radix.initiliaze.connection_open');
     return Promise.resolve();
   }
@@ -133,7 +138,7 @@ export default class RadixAPI {
     return id;
   }
 
-  getDataByType(type: 'survey'|'response') {
+  private getDataByType(type: DataType) {
     return this.getAppData()
       .map(x => x.payload.split('$', 4))
       .filter(x => x[2] === type)
@@ -147,12 +152,12 @@ export default class RadixAPI {
   }
 
   getSurveys() {
-    return Object.values(this.getDataByType('survey'))
+    return Object.values(this.getDataByType(DataType.Survey))
       .map((x) => JSON.parse(x as string) as Survey);
   }
 
   getResponses() {
-    return Object.values(this.getDataByType('response'))
+    return Object.values(this.getDataByType(DataType.Response))
       .map((x) => JSON.parse(x as string) as Response);
   }
 
@@ -171,6 +176,13 @@ export default class RadixAPI {
     }
   }
 
+  /**
+   * Convert subunits token amount to actual decimal token amount.
+   * @param balance 
+   */
+  getTransactionBalance(balance: any) {
+    return this.token.toTokenUnits((balance)[this.token.id.toString()])
+  }
 
   private subscribeToTransferSystem() {
     // Subscribe for all previous transactions as well as new ones
@@ -269,4 +281,9 @@ export default class RadixAPI {
     }
     return [];
   }
+}
+
+export enum DataType {
+  Survey = 'survey',
+  Response = 'response'
 }

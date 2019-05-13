@@ -111,6 +111,9 @@ const surveys = (state = initialState, action) => {
           isLoading: {$set: false},
           data: {
             [data.id]: {
+              totalResponses: {$set: data.totalResponses},
+              firstResponse: {$set: data.firstResponse},
+              lastResponse: {$set: data.lastResponse},
               responses: {$set: data.responses}
             }
           }

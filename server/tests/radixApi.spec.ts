@@ -26,59 +26,63 @@ describe('RadixAPI', async () => {
 
   before(function (done) {
     this.timeout(10000);
-    radixApi = new RadixAPI('dd-test', 'dd');
+    radixApi = new RadixAPI('dd-test-' + new Date().getTime(), 'dd');
     radixApi.initialize(key, process.env.KEY_PASSWORD as string);
-    setTimeout(() => done(), 8000);
+    setTimeout(() => done(), 10000);
   });
 
 
 
-  it('submitData() should not allow for given data to have an ID property', () => {
-    return assert.rejects(radixApi.submitData(initialData.withId));
-  });
+  ['survey', 'response'].forEach(type => {
+    describe(`for data type "${type}"`, () => {
 
-  ['empty', 'simple', 'long', 'veryLong'].forEach(x => {
-    describe(`for ${x} data (${Buffer.byteLength(JSON.stringify(initialData[x]))} Bytes)`, () => {
+      it('submitData() should not allow for given data to have an ID property', () => {
+        assert.rejects(radixApi.submitData(initialData.withId, type as any));
+      });
+    
 
-
-      describe('submitData()', () => {
-        it('should return a string', async function () {
-          this.timeout(10000);
-          ids[x] = await radixApi.submitData(initialData[x]);
-          assert.strictEqual(typeof ids[x], 'string');
-        });
-
-        it('should return a 21 char long string', () => {
-          assert.strictEqual(ids[x].length, 21);
-        });
+      ['empty', 'simple', 'long', 'veryLong'].forEach(x => {
+        describe(`for ${x} data (${Buffer.byteLength(JSON.stringify(initialData[x]))} Bytes)`, () => {
+    
+    
+          describe('submitData()', () => {
+            it('should return a string', async function () {
+              this.timeout(10000);
+              ids[x] = await radixApi.submitData(initialData[x], type as any);
+              assert.strictEqual(typeof ids[x], 'string');
+            });
+    
+            it('should return a 21 char long string', () => {
+              assert.strictEqual(ids[x].length, 21);
+            });
+          });
+    
+    
+          describe('getData()', () => {
+            it('should return an object', async () => {
+              returnedData[x] = await radixApi.getDataById(ids[x]);
+              assert.strictEqual(typeof returnedData[x], 'object');
+            });
+    
+            it('should return an object with id', () => {
+              assert.strictEqual(!!returnedData[x].id, true);
+            });
+    
+            it('should return an object with the same ID that submitData() returned', () => {
+              assert.strictEqual(returnedData[x].id, ids[x]);
+            });
+    
+            it('should return an object with the same data as original data', () => {
+              const data = { ...returnedData[x] };
+              delete data.id;
+              assert.strictEqual(JSON.stringify(data), JSON.stringify(initialData[x]));
+            });
+          });
+        })
+    
       });
 
-
-      describe('getData()', () => {
-        it('should return an object', async () => {
-          returnedData[x] = await radixApi.getDataById(ids[x]);
-          assert.strictEqual(typeof returnedData[x], 'object');
-        });
-
-        it('should return an object with id', () => {
-          assert.strictEqual(!!returnedData[x].id, true);
-        });
-
-        it('should return an object with the same ID that submitData() returned', () => {
-          assert.strictEqual(returnedData[x].id, ids[x]);
-        });
-
-        it('should return an object with the same data as original data', () => {
-          const data = { ...returnedData[x] };
-          delete data.id;
-          assert.strictEqual(JSON.stringify(data), JSON.stringify(initialData[x]));
-        });
-      });
     })
+  })
 
-  });
-
-  after(() => {
-    process.exit(0);
-  });
 });

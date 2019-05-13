@@ -8,7 +8,7 @@ import QRCode from 'qrcode.react';
 
 const { Title, Text } = Typography;
 
-class BuyResults extends React.Component {
+class BuyResponses extends React.Component {
   state = {
     enteredResponseCount: 0,
     waitingForResponse: false
@@ -83,7 +83,7 @@ class BuyResults extends React.Component {
           <Statistic title="Total responses" value={survey.totalResponses} />
         </Col>
         <Col span={5}>
-          <Statistic title="Price per response" value={survey.resultPrice} suffix="Rads"
+          <Statistic title="Price per response" value={survey.responsePrice} suffix="Rads"
             formatter={(value) => value} />
         </Col>
       </Row>
@@ -98,7 +98,7 @@ class BuyResults extends React.Component {
               value={this.state.enteredResponseCount} precision={0} min={0}
               onChange={(v) => !isNaN(v) && this.setState({ enteredResponseCount: v })}
             />
-            <Text>Total price: </Text> <Text strong>{this.state.enteredResponseCount * survey.resultPrice} Rads</Text>
+            <Text>Total price: </Text> <Text strong>{this.state.enteredResponseCount * survey.responsePrice} Rads</Text>
             
           </div>
           <Text type="secondary">The number of responses you have entered here is only for informational purposes.
@@ -172,4 +172,4 @@ function mapDispatchToProps(dispatch) {
 export default connect(
   mapStateToProps,
   mapDispatchToProps
-)(BuyResults);
+)(BuyResponses);

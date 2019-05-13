@@ -5,11 +5,11 @@ export interface Survey {
   title: string;
   description: string;
   surveyVisibility: SurveyVisibility;
-  resultsVisibility: ResultsVisibility;
+  responseVisibility: ResponseVisibility;
   surveyType: SurveyType;
-  resultsPassword: string;
-  resultsPasswordHashed: string;
-  resultPrice: number;
+  responsePassword: string;
+  responsePasswordHashed: string;
+  responsePrice: number;
   winnerSelection: WinnerSelection;
   totalReward: number;
   winnerCount: number;
@@ -25,7 +25,7 @@ export interface Survey {
   responses: Response[];
 }
 
-export enum ResultsVisibility {
+export enum ResponseVisibility {
   Public = 'public',
   Private = 'private',
   PrivateForSale = 'privateForSale'

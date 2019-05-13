@@ -49,6 +49,7 @@ class SurveyList extends React.Component {
               loading={surveys.isLoading}
               renderItem={id => {
                 const survey = surveys.data[id];
+                if (survey.surveyVisibility === 'private') return null;
                 return (
                   <List.Item>
                     <List.Item.Meta

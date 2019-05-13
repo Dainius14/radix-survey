@@ -132,7 +132,6 @@ function Answers({ question, form, push, remove }) {
   const addAnswer = () => push({ ...answerTemplate, id: answerId++, questionId: question.id });
   const removeAnswer = (index) => remove(index);
   const validateAnswer = (value, index) => {
-    console.log(form)
     if (['radio', 'checkbox'].includes(question.type) && !value.trim() && form.touched.answers[index]) {
       return 'Supply an answer choice or delete it';
     }

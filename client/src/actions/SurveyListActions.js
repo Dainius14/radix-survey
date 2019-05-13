@@ -163,7 +163,7 @@ export function getSurveyResults(surveyId, password) {
     dispatch(getSurveyResultsRequest());
     
     try {
-      const response = await request(`${API_ENDPOINT}/api/surveys/${surveyId}/results`, {
+      const response = await request(`${API_ENDPOINT}/api/surveys/${surveyId}/responses`, {
         method: 'GET',
         headers: {
           'Authorization': password || ''
@@ -191,7 +191,7 @@ export function postSurveyAnswers(surveyId, surveyResponse, antMessage) {
     dispatch(postSurveyAnswersRequest());
     
     try {
-      const response = await request(`${API_ENDPOINT}/api/surveys/${surveyId}/answers`, {
+      const response = await request(`${API_ENDPOINT}/api/surveys/${surveyId}/responses`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json'
@@ -217,7 +217,7 @@ export function buySurveyResults(surveyId, radixAddress) {
     dispatch(buySurveyResultsRequest());
     
     try {
-      const response = await request(`${API_ENDPOINT}/api/surveys/${surveyId}/results`, {
+      const response = await request(`${API_ENDPOINT}/api/surveys/${surveyId}/responses`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json'
@@ -226,7 +226,7 @@ export function buySurveyResults(surveyId, radixAddress) {
       });
       console.debug('buySurveyResults() success', response);
       dispatch(buySurveyResultsSuccess(response));
-      history.push(`/surveys/${surveyId}/results`)
+      history.push(`/surveys/${surveyId}/responses`)
     }
     catch (error) {
       console.error('buySurveyResults() error', error);

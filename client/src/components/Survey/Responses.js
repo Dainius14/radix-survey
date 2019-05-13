@@ -11,7 +11,7 @@ import { format as formatDate } from 'timeago.js';
 const { Title, Text } = Typography;
 
 
-class Results extends React.Component {
+class Responses extends React.Component {
   state = {
     chartSetup: false,
     resultsView: 'summary',
@@ -207,7 +207,7 @@ class Results extends React.Component {
 
     const pageHeader = survey ? <PageHeader
         title={survey.title}
-        subTitle="Results"
+        subTitle="Responses"
         onBack={() => this.props.history.push(`/surveys/${this.props.match.params.surveyId}`)}
         bottomLeftActions={
           <Radio.Group key="0" defaultValue="summary" buttonStyle="solid"
@@ -388,4 +388,4 @@ function mapDispatchToProps(dispatch) {
 export default connect(
   mapStateToProps,
   mapDispatchToProps
-)(Results);
+)(Responses);

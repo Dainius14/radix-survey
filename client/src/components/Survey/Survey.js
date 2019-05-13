@@ -6,7 +6,7 @@ import '../../styles/MultilineCode.css';
 import '../../styles/RequiredAsteriskAfter.css';
 import '../../styles/NoBottomMargin.css';
 import { PageHeader, DescriptionItem } from '../PageHeader';
-import { SurveyType, ResultsVisibility, WinnerSelection } from '../../constants';
+import { SurveyType, ResponseVisibility, WinnerSelection } from '../../constants';
 import { format as formatDate } from 'timeago.js';
 const { TextArea } = Input;
 const { Title, Paragraph, Text } = Typography;
@@ -80,13 +80,13 @@ class Survey extends React.Component {
           onBack={() => this.props.history.push('/surveys')}
           bottomLeftActions={
             <>
-              <Button onClick={() => this.props.history.push(`/surveys/${this.props.match.params.surveyId}/results`)}
+              <Button onClick={() => this.props.history.push(`/surveys/${this.props.match.params.surveyId}/responses`)}
                 icon="pie-chart">
-                {`Show results ${survey.resultsVisibility !== ResultsVisibility.Public ? '(private)' : ''}`}
+                {`Show responses ${survey.responseVisibility !== ResponseVisibility.Public ? '(private)' : ''}`}
               </Button>
-              {survey.resultsVisibility === ResultsVisibility.PrivateForSale &&
-              <Button onClick={() => this.props.history.push(`/surveys/${this.props.match.params.surveyId}/results/buy`)}
-                icon="pie-chart">Buy results</Button>}
+              {survey.responseVisibility === ResponseVisibility.PrivateForSale &&
+              <Button onClick={() => this.props.history.push(`/surveys/${this.props.match.params.surveyId}/responses/buy`)}
+                icon="pie-chart">Buy responses</Button>}
             </>
           }
           >

@@ -4,7 +4,7 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "test": "set NODE_ENV=test&& set APP_ID=dd-testing-7&& mocha -r ts-node/register -r dotenv/config tests/**/*.spec.ts",
+    "test": "set NODE_ENV=test&& mocha --exit -r ts-node/register -r dotenv/config tests/**/*.spec.ts",
     "start": "nodemon",
     "build": "tsc --skipLibCheck"
   },
@@ -15,20 +15,22 @@
     "axios": "^0.18.0",
     "bcrypt": "^3.0.6",
     "dotenv": "^8.0.0",
+    "nanoid": "^2.0.1",
     "radixdlt": "^1.0.7-alpha",
     "restify": "^8.3.2",
     "restify-cors-middleware": "^1.1.1",
     "restify-errors": "^8.0",
     "rxjs": "^6.5.2",
-    "shortid": "^2.2.14",
     "winston": "^3.2.1"
   },
   "devDependencies": {
     "@types/bcrypt": "^3.0.0",
+    "@types/chai": "^4.1.7",
     "@types/mocha": "^5.2.6",
     "@types/nanoid": "^1.2.1",
     "@types/restify": "^7.2.10",
     "@types/restify-errors": "^4.3.3",
+    "chai": "^4.2.0",
     "mocha": "^6.1.4",
     "ts-node": "^8.1.0",
     "typescript": "^3.4.5"
