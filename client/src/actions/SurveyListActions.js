@@ -217,7 +217,7 @@ export function buySurveyResults(surveyId, radixAddress) {
     dispatch(buySurveyResultsRequest());
     
     try {
-      const response = await request(`${API_ENDPOINT}/api/surveys/${surveyId}/responses`, {
+      const response = await request(`${API_ENDPOINT}/api/surveys/${surveyId}/responses/buy`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json'

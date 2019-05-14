@@ -40,60 +40,77 @@ export default class RadixAPI {
   }
 
 
-  transferTokens(toAddress: string, amount: number, message: string) {
-    logger.info(`radix.transferToken.to=${toAddress}.amount=${amount}${this.tokenLabel}.msg="${message}"`);
+  /**
+   * Transfers tokens to other account.
+   * @param toAddress account address to send tokens to
+   * @param amount number of tokens to send in decimals
+   * @param message additional message to add
+   */
+  transferTokens(toAddress: string, amount: number, message?: string) {
+    logger.info(`radix.transferToken  [To: ${toAddress}]  [Amount: ${amount} ${this.tokenLabel}]  [Msg: ${message}]`);
     const toAccount = RadixAccount.fromAddress(toAddress, true);
     RadixTransactionBuilder
       .createTransferAtom(this.account, toAccount, this.token, amount, message)
       .signAndSubmit(this.identity)
       .subscribe({
         next: state => {
-          logger.debug(`radix.transferToken.next.to=${this.shortenAddress(toAddress)}.state=${state}`);
+          logger.debug(`radix.transferToken.next  [To: ${this.shortenAddress(toAddress)}]  [State: ${state}]`);
         },
         complete: () => {
-          logger.info(`radix.transferToken.complete.to=${this.shortenAddress(toAddress)}}`);
+          logger.info(`radix.transferToken.complete  [To: ${this.shortenAddress(toAddress)}]`);
         },
         error: error => {
-          logger.error(`radix.transferToken.error.to=${this.shortenAddress(toAddress)}.error=${error}`);
+          logger.error(`radix.transferToken.error  [To: ${this.shortenAddress(toAddress)}]  [Error: ${error}]`);
         }
       });
   }
 
+  /**
+   * Sends a message to other account.
+   * @param toAddress account address to send message to
+   * @param message message to send
+   */
   sendMessage(toAddress: string, message: string) {
-    logger.info(`radix.sendMessage.to=${toAddress}.msg="${message}"`);
+    logger.info(`radix.sendMessage  [To: ${toAddress}]  [Msg: ${message}]`);
     const toAccount = RadixAccount.fromAddress(toAddress, true);
     RadixTransactionBuilder
       .createRadixMessageAtom(this.account, toAccount, message)
       .signAndSubmit(this.identity)
       .subscribe({
         next: state => {
-          logger.debug(`radix.sendMessage.next.to=${this.shortenAddress(toAddress)}.state=${state}`);
+          logger.debug(`radix.sendMessage.next  [To: ${this.shortenAddress(toAddress)}]  [State: ${state}]`);
         },
         complete: () => {
-          logger.info(`radix.sendMessage.complete.to=${this.shortenAddress(toAddress)}}`);
+          logger.info(`radix.sendMessage.complete  [To: ${this.shortenAddress(toAddress)}]`);
         },
         error: error => {
-          logger.error(`radix.sendMessage.error.to=${this.shortenAddress(toAddress)}.error=${error}`);
+          logger.error(`radix.sendMessage.error  [To: ${this.shortenAddress(toAddress)}]  [Error: ${error}]`);
         }
       })
   }
 
-  private submitDataAtom(data: string) {
-    logger.info(`radix.storeDataAtom`);
-    return new Promise(resolve => {
+  /**
+   * Submits payload atom to the ledger.
+   * @param data some data to store
+   * @returns {Promise<void>} if data is storred successfully
+   */
+  private submitPayloadAtom(data: string): Promise<void> {
+    logger.info(`radix.storeDataAtom  [Payload: ${data.substr(0, 28)}]`);
+    return new Promise((resolve, reject) => {
       RadixTransactionBuilder
       .createPayloadAtom([this.account], this.appID, data)
       .signAndSubmit(this.identity)
       .subscribe({
         next: state => {
-          logger.debug(`radix.storeDataAtom.next  [Data atom ID: ${data.substr(0, 26)}]  [State: ${state}]`);
+          logger.debug(`radix.storeDataAtom.next  [Payload: ${data.substr(0, 28)}]  [State: ${state}]`);
         },
         complete: () => {
-          logger.info(`radix.storeDataAtom.complete  [Data atom ID: ${data.substr(0, 26)}]`);
-          resolve(true);
+          logger.info(`radix.storeDataAtom.complete  [Payload: ${data.substr(0, 28)}]`);
+          resolve();
         },
         error: error => {
-          logger.error(`radix.storeDataAtom.error [Error: ${error}]`);
+          logger.error(`radix.storeDataAtom.error [Payload: ${data.substr(0, 28)}]  [Error: ${error}]`);
+          reject(error);
         }
       });
     });
@@ -104,7 +121,7 @@ export default class RadixAPI {
    * @param data an object to be stored on the ledger
    * @returns ID of the object once all of its part are stored
    */
-  async submitData(data: object, type: 'survey'|'response'): Promise<string> {
+  async submitData(data: object, type: DataType): Promise<string> {
     if ((data as any).id) throw new Error('Data should not have an ID property');
 
     const id = nanoid();
@@ -126,34 +143,32 @@ export default class RadixAPI {
       jsonParts.push(jsonPart);
     }
 
-    // For each part, prepend 23 char long (21B) part ID which is data ID + padded part index
-    // <id>$<001>$<data>.
+    // For each part, prepend 23 char long (21B) part ID which is data ID + padded part index + type
+    // <id>$<001>$<type>$<data>.
     // With 999 part should hold around 868 kB of data.
     const prepedJsonParts = jsonParts.map((part, index) => {
       const partId = `${id}$${index.toString().padStart(3, '0')}$${type}$`;
       return partId + part;
     });
 
-    await Promise.all(prepedJsonParts.map(async x => await this.submitDataAtom(x)));
+    await Promise.all(prepedJsonParts.map(async x => await this.submitPayloadAtom(x)));
     return id;
   }
 
   private getDataByType(type: DataType) {
     return this.getAppData()
-      .map(x => x.payload.split('$', 4))
-      .filter(x => x[2] === type)
-      .sort((a, b) => parseInt(a[1]) - parseInt(b[1]))
+      .filter(x => x.type === type)
+      .sort((a, b) => parseInt(a.partId) - parseInt(b.partId))
       .reduce((acc: any, x) => {
-        const id = x[0];
-        if (!acc[id]) acc[id] = '';
-        acc[id] += x[3];
+        if (!acc[x.id]) acc[x.id] = '';
+        acc[x.id] += x.data;
         return acc;
       }, {});
   }
 
   getSurveys() {
     return Object.values(this.getDataByType(DataType.Survey))
-      .map((x) => JSON.parse(x as string) as Survey);
+      .map((x) => {logger.info(x); return JSON.parse(x as string) as Survey});
   }
 
   getResponses() {
@@ -163,10 +178,9 @@ export default class RadixAPI {
 
   getDataById(id: string) {
     const dataStr = this.getAppData()
-      .map(x => x.payload.split('$', 4))
-      .filter(x => x[0] === id)
-      .sort((a, b) => parseInt(a[1]) - parseInt(b[1]))
-      .map(x => x[3])
+      .filter(x => x.id === id)
+      .sort((a, b) => parseInt(a.partId) - parseInt(b.partId))
+      .map(x => x.data)
       .join('');
     try {
       return JSON.parse(dataStr);
@@ -273,17 +287,33 @@ export default class RadixAPI {
     return `${address.substr(0, 5)}...${address.substr(address.length - 5)}`
   }
 
-
-  private getAppData(): RadixApplicationData[] {
+  private getAppData(): DataPayload[] {
     const appData = this.account.dataSystem.applicationData.get(this.appID);
     if (appData) {
-      return appData.values();
+      return appData.values()
+        .map(x => {
+          const id = x.payload.substr(0, 21);
+          const partId = x.payload.substr(22, 3);
+          const type = x.payload.substr(26, 2);
+          const data = x.payload.substr(29);
+          return { id, partId, type, data } as DataPayload;
+        });
     }
     return [];
   }
 }
 
 export enum DataType {
-  Survey = 'survey',
-  Response = 'response'
+  Survey = '00',
+  Response = '01'
+}
+
+type DataPayload = {
+  /** 21 char long */
+  id: string;
+  /** 3 char long */
+  partId: string;
+  /** 2 char long */
+  type: DataType;
+  data: string;
 }

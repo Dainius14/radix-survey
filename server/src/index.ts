@@ -4,7 +4,7 @@ import RadixAPI from './radixApi';
 import key from '../key.json'
 import restify from 'restify';
 import { InvalidContentError, NotFoundError, BadRequestError, UnauthorizedError } from 'restify-errors';
-import SurveyController, { ItemNotFoundError, WrongResponsesPasswordError, InvalidResponseFormatError } from './surveyController';
+import SurveyController, { ItemNotFoundError, WrongResponsesPasswordError, InvalidResponseFormatError, InvalidSurveyFormatError } from './surveyController';
 
 const server = restify.createServer();
 
@@ -36,7 +36,7 @@ server.get('/api/surveys/:survey_id', async (req, res, next) => {
 });
 
 /**
- * Creates new survey.
+ * Create a new survey.
  */
 server.post('/api/surveys', async (req, res, next) => {
   try {
@@ -53,7 +53,9 @@ server.post('/api/surveys', async (req, res, next) => {
   }
 });
 
-
+/**
+ * Get responses for a survey.
+ */
 server.get('/api/surveys/:survey_id/responses', async (req, res, next) => {
   try {
     const survey = await surveyController.getSurveyById(req.params.survey_id as string, req.headers.authorization);
@@ -71,6 +73,9 @@ server.get('/api/surveys/:survey_id/responses', async (req, res, next) => {
   }
 });
 
+/**
+ * Submit a response to a survey.
+ */
 server.post('/api/surveys/:survey_id/responses', async (req, res, next) => {
   try {
     await surveyController.createResponse(req.params.survey_id as string, req.body);
@@ -84,6 +89,24 @@ server.post('/api/surveys/:survey_id/responses', async (req, res, next) => {
     }
     if (error instanceof InvalidResponseFormatError) {
       return next(new BadRequestError(error.message));
+    }
+    else throw error;
+  }
+});
+
+
+/**
+ * Initiate purchase of responses.
+ */
+server.post('/api/surveys/:survey_id/responses/buy', async (req, res, next) => {
+  try {
+    const responses = await surveyController.buyResponses(req.params.survey_id as string, req.body.radixAddress);
+    res.send(responses);
+    return next();
+  }
+  catch (error) {
+    if (error instanceof InvalidSurveyFormatError) {
+      return next(new NotFoundError(error.message));
     }
     else throw error;
   }

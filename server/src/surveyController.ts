@@ -1,4 +1,5 @@
 import Ajv from 'ajv';
+import axios from 'axios';
 import bcrypt from 'bcrypt';
 
 import { Survey, Response, ResponseVisibility, SurveyVisibility, SurveyType } from './types';
@@ -58,10 +59,15 @@ class SurveyController {
   }
 
 
-  async createSurvey(surveyData: {}): Promise<string> {
+  /**
+   * Creates a survey from given data.
+   * @throws {InvalidSurveyFormatError}
+   * @param surveyData 
+   */
+  async createSurvey(surveyData: object): Promise<string> {
     const isValid = this.testSurvey(surveyData);
     if (!isValid) {
-      throw new RangeError(this.ajv.errorsText(this.testSurvey.errors));
+      throw new InvalidSurveyFormatError(this.ajv.errorsText(this.testSurvey.errors));
     }
 
     const survey = { ...surveyData, created: new Date().getTime() } as Survey;
@@ -126,8 +132,83 @@ class SurveyController {
     return await this.radixApi.submitData(response, DataType.Response);
   }
 
+  async buyResponses(surveyId: string, radixAddressStart: string) {
+    const survey = await this.getSurveyById(surveyId);
+    const responses = await this.getSurveyResponses(surveyId);
+    const randomIndexes = await this.getRandomSequence(responses.length);
+    
+    return new Promise(resolve => {
+      const subscribtion = this.radixApi.transactionSubject.subscribe({
+        next: async update => {
+          const transaction = update.transaction;
+          if (!transaction) return;
+
+          const participants: string[] = Object.values(transaction.participants);
+          if (participants.length === 0) return;
+          const transactionFrom = participants[0];
+
+          if (transactionFrom.startsWith(radixAddressStart)){
+            // Received transaction from address
+            const balance = this.radixApi.getTransactionBalance(transaction.balance);
+            
+            const responseCountToBuy = Math.min(parseInt((balance / survey.responsePrice).toString()), responses.length);
+            
+            const selectedResponses = randomIndexes.slice(0, responseCountToBuy).map(x => responses[x]);
+
+            resolve({ surveyId: survey.id, responses: selectedResponses });
+
+            const msg = `Purchase of ${selectedResponses.length} responses for "${survey.title}" survey`;
+            this.radixApi.transferTokens(survey.radixAddress, selectedResponses.length * survey.responsePrice, msg);
+            subscribtion.unsubscribe();
+          }
+        }
+      });
+    });
+
+
+    // try {
+    //   logger.info('Making request to random.org...');
+    //   const req = await axios.get(`https://www.random.org/sequences/?min=0&max=${responses.length - 1}&col=1&format=plain&rnd=new`);
+    //   const indexes: [] = req.data.split('\n');
+
+    //   const responseCountToBuy = Math.min(parseInt((tokenAmount / survey.resultPrice).toString()), indexes.length - 1);
+    //   const selectedResponses = indexes.slice(0, responseCountToBuy).map(x => responses[x]);
+      
+    //   logger.info(`Sending ${selectedResponses.length} responses...`);
+    //   item.res.send({ responses: selectedResponses, surveyId: survey.id });
+    //   item.res.status(200);
+    //   item.next();
+
+    //   const indexOfItem = surveysWaitingForResultsPurchase.findIndex(x => x.radixAddress === item.radixAddress && x.survey.id === survey.id);
+    //   surveysWaitingForResultsPurchase.splice(indexOfItem, 1);
+    //   const msg = `Purchase of ${selectedResponses.length} responses for "${survey.title}" survey`;
+
+    //   transferTokens(survey.radixAddress, selectedResponses.length * survey.resultPrice, msg)
+    // }
+    // catch {}
+      
+  }
+
   private isValidResponseForSurvey(survey: Survey, responseData: {}) {
     return true;
+  }
+
+  /**
+   * Returns an array of given length with numbers 0..length in random order.
+   * @param length how many numbers to have in the sequence
+   */
+  private async getRandomSequence(length: number): Promise<number[]> {
+    if (length == 0)
+      return [];
+    else if (length == 1)
+      return [ 0 ];
+    try {
+      const req = await axios.get(`https://www.random.org/sequences/?min=0&max=${length - 1}&col=1&format=plain&rnd=new`);
+      return (req.data.split('\n') as []).slice(0, length).map(x => parseInt(x));
+    }
+    catch (error) {
+      return [];
+    }
   }
 
   /**
@@ -155,7 +236,7 @@ class SurveyController {
       // Response visibility is public, add them
       survey.responses = responses;
     }
-    else if (responsesPassword) {
+    else if (typeof responsesPassword !== 'undefined') {
       // If a password is given and is correct, add responses, otherwise throw error that the password is wrong
       if (await bcrypt.compare(responsesPassword, survey.responsePasswordHashed)) {
         survey.responses = responses;
@@ -168,12 +249,6 @@ class SurveyController {
   }
 }
 
-// export class ItemNotFoundError extends Error {
-//   constructor(msg: string) {
-//     super(msg);
-//     this.name = 'ItemNotFoundError';
-//   }
-// }
 export class ItemNotFoundError extends Error {
   private __proto__: Error;
   constructor(message?: string) {
@@ -196,6 +271,14 @@ export class InvalidResponseFormatError extends Error {
   constructor(message?: string) {
     const trueProto = new.target.prototype;
     super(message || 'Answers for questions do not map correctly');
+    this.__proto__ = trueProto;
+  }
+}
+export class InvalidSurveyFormatError extends Error { 
+  private __proto__: Error;
+  constructor(message?: string) {
+    const trueProto = new.target.prototype;
+    super(message);
     this.__proto__ = trueProto;
   }
 }

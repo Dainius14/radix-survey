@@ -10,11 +10,11 @@ describe('SurveyController', async () => {
 
 
   before(function (done) {
-    this.timeout(6000);
+    this.timeout(15000);
     const radixApi = new RadixAPI('dd-test-' + new Date().getTime());
-    surveyController = new SurveyController(radixApi);
     radixApi.initialize(key, process.env.KEY_PASSWORD as string);
-    setTimeout(() => done(), 5000);
+    surveyController = new SurveyController(radixApi);
+    setTimeout(() => done(), 14000);
   });
 
   describe('when no data exists', () => {
@@ -207,8 +207,9 @@ describe('SurveyController', async () => {
         surveys = await surveyController.getPublicSurveys();
         assert.strictEqual(Array.isArray(surveys), true);
       });
-      it('should return an array with 0 elements', () => {
-        assert.strictEqual(surveys.length, 0);
+      it('should return an array without given survey in it', () => {
+        const contains = surveys.some(x => x.id === testSurveys[1].id)
+        assert.strictEqual(contains, false);
       });
     });
 

@@ -1,4 +1,4 @@
-import RadixAPI from '../src/radixApi';
+import RadixAPI, { DataType } from '../src/radixApi';
 import assert from 'assert';
 import key from '../key.json';
 
@@ -25,19 +25,20 @@ describe('RadixAPI', async () => {
 
 
   before(function (done) {
-    this.timeout(10000);
-    radixApi = new RadixAPI('dd-test-' + new Date().getTime(), 'dd');
+    this.timeout(11000);
+    radixApi = new RadixAPI('dd-test-' + new Date().getTime());
     radixApi.initialize(key, process.env.KEY_PASSWORD as string);
     setTimeout(() => done(), 10000);
   });
 
 
 
-  ['survey', 'response'].forEach(type => {
-    describe(`for data type "${type}"`, () => {
+  Object.keys(DataType).forEach(key => {
+    const type = DataType[key as any] as any;
+    describe(`for data type "${key}"`, () => {
 
       it('submitData() should not allow for given data to have an ID property', () => {
-        assert.rejects(radixApi.submitData(initialData.withId, type as any));
+        assert.rejects(radixApi.submitData(initialData.withId, type));
       });
     
 
@@ -48,7 +49,7 @@ describe('RadixAPI', async () => {
           describe('submitData()', () => {
             it('should return a string', async function () {
               this.timeout(10000);
-              ids[x] = await radixApi.submitData(initialData[x], type as any);
+              ids[x] = await radixApi.submitData(initialData[x], type);
               assert.strictEqual(typeof ids[x], 'string');
             });
     
