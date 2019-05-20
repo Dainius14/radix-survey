@@ -4,7 +4,7 @@ import RadixAPI from './radixApi';
 import key from '../key.json'
 import restify from 'restify';
 import { InvalidContentError, NotFoundError, BadRequestError, UnauthorizedError } from 'restify-errors';
-import SurveyController, { ItemNotFoundError, WrongResponsesPasswordError, InvalidResponseFormatError, InvalidSurveyFormatError } from './surveyController';
+import SurveyController, { ItemNotFoundError, WrongResponsesPasswordError, InvalidResponseFormatError, InvalidSurveyFormatError, RepeatingResponseRadixAddress } from './surveyController';
 
 const server = restify.createServer();
 
@@ -87,7 +87,7 @@ server.post('/api/surveys/:survey_id/responses', async (req, res, next) => {
     if (error instanceof ItemNotFoundError) {
       return next(new NotFoundError(error.message));
     }
-    if (error instanceof InvalidResponseFormatError) {
+    if (error instanceof InvalidResponseFormatError || error instanceof RepeatingResponseRadixAddress) {
       return next(new BadRequestError(error.message));
     }
     else throw error;

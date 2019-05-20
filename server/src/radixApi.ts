@@ -1,4 +1,4 @@
-import { radixUniverse, RadixUniverse, RadixLogger, RadixKeyStore, RadixSimpleIdentity, RadixTransactionBuilder, RadixNEDBAtomCache, radixTokenManager, RadixAccount, RadixApplicationData, RadixTokenClass, RadixTransactionUpdate } from 'radixdlt';
+import { radixUniverse, RadixUniverse, RadixLogger, RadixKeyStore, RadixSimpleIdentity, RadixTransactionBuilder, RadixNEDBAtomCache, radixTokenManager, RadixAccount, RadixApplicationData, RadixTokenClass, RadixTransactionUpdate, RadixTransferAccountSystem, RadixTokenManager } from 'radixdlt';
 import logger from './logger';
 import nanoid from 'nanoid';
 import { Survey, Response } from './types';
@@ -31,10 +31,11 @@ export default class RadixAPI {
     this.account = this.identity.account;
     this.account.enableCache(new RadixNEDBAtomCache('./cache.db'));
     this.account.openNodeConnection();
-    // this.subscribeToDataSystem();
-    // this.subscribeToTransferSystem();
-
     this.transactionSubject = this.account.transferSystem.transactionSubject;
+
+    // this.subscribeToDataSystem();
+    this.subscribeToTransferSystem();
+
     logger.info('radix.initiliaze.connection_open');
     return Promise.resolve();
   }
@@ -198,11 +199,15 @@ export default class RadixAPI {
     return this.token.toTokenUnits((balance)[this.token.id.toString()])
   }
 
-  private subscribeToTransferSystem() {
+  private subscribeToTransferSystem(all: boolean = false) {
     // Subscribe for all previous transactions as well as new ones
-    this.account.transferSystem
-      .getAllTransactions()
-      .subscribe(transactionUpdate => {
+    let transferSystem: any = this.transactionSubject;
+    if (all) {
+      transferSystem = this.account.transferSystem.getAllTransactions();
+    }
+
+    transferSystem
+      .subscribe((transactionUpdate: RadixTransactionUpdate) => {
         logger.debug('radix.transferSystem.new_transaction:', transactionUpdate);
         
         const transaction = transactionUpdate.transaction;
@@ -222,7 +227,7 @@ export default class RadixAPI {
           logger.warn('radix.transferSystem.new_transaction.more_than_one_participant:', transactionUpdate);
         }
         const transactionFrom = participants[0];
-        // logger.info(`radix.transferSystem.new_transaction  [From: ${transactionFrom}]  [Balance: ${balance}${this.token.iso}]`);
+        logger.info(`radix.transferSystem.new_transaction  [From: ${transactionFrom}]  [Balance: ${balance}${this.token.iso}]`);
         
 
 

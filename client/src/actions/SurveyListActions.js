@@ -205,7 +205,14 @@ export function postSurveyAnswers(surveyId, surveyResponse, antMessage) {
     }
     catch (error) {
       console.error('postSurveyAnswers() error', error);
-      dispatch(postSurveyAnswersError(error));
+      if (error.message === 'radixAddress_repeat') {
+        antMessage.config({ top: 50 });
+        antMessage.error('Response with that RadixDLT addres has already been submitted!', 5);
+        dispatch(postSurveyAnswersSuccess(error));
+      }
+      else {
+        dispatch(postSurveyAnswersError(error));
+      }
     }
   }
 }

@@ -2,7 +2,7 @@ import Ajv from 'ajv';
 import axios from 'axios';
 import bcrypt from 'bcrypt';
 
-import { Survey, Response, ResponseVisibility, SurveyVisibility, SurveyType } from './types';
+import { Survey, Response, ResponseVisibility, SurveyVisibility, SurveyType, WinnerSelection } from './types';
 import { surveySchema, responseSchema } from './jsonSchemas';
 import RadixAPI, { DataType } from './radixApi';
 import logger from './logger';
@@ -85,7 +85,7 @@ class SurveyController {
     else {
       // Survey is paid, wait for transaction
       return new Promise(resolve => {
-        this.radixApi.transactionSubject.subscribe({
+        const subscription = this.radixApi.transactionSubject.subscribe({
           next: update => {
             const transaction = update.transaction;
             if (!transaction) return;
@@ -98,6 +98,8 @@ class SurveyController {
             if (transactionFrom.startsWith(survey.radixAddress) && balance >= survey.totalReward) {
               const id = this.radixApi.submitData(survey, DataType.Survey);
               resolve(id);
+              this.radixApi.sendMessage(transactionFrom, `Your survey has been published at ${process.env.URL}/surveys/${id}`)
+              subscription.unsubscribe();
             }
           }
         })
@@ -105,7 +107,7 @@ class SurveyController {
     }
   }
 
-  async createResponse(surveyId: string, responseData: {}): Promise<any> {
+  async createResponse(surveyId: string, responseData: { radixAddress: string }): Promise<any> {
     const isValidResponse = this.testResponse(responseData);
     if (!isValidResponse) throw new InvalidResponseFormatError(this.ajv.errorsText(this.testResponse.errors));    
     const survey = await this.getSurveyById(surveyId);
@@ -114,21 +116,34 @@ class SurveyController {
     // Response is valid
     const response = { ...responseData, created: new Date().getTime(), surveyId: survey.id } as Response;
     
-    // if (survey.surveyType === SurveyType.Paid) {
-    //   switch (survey.winnerSelection) {
-    //     case WinnerSelection.FirstN: {
-    //       const answerCount = getSurveyResponses(survey.id).length;
-    //       logger.debug(`Survey answer count is ${answerCount} and first ${survey.winnerCount} people must be rewarded`);
+    if (survey.surveyType === SurveyType.Paid && responseData.radixAddress) {
+      const responses = this.getSurveyResponses(survey.id);
+      const radixAddressExists = responses.find(x =>
+        !!x.radixAddress && x.radixAddress === responseData.radixAddress);
+      const responsesWRadixAddress = responses.filter(x => x.radixAddress);
+      if (radixAddressExists)
+        throw new RepeatingResponseRadixAddress('radixAddress_repeat');
 
-    //       if (answerCount <= survey.winnerCount) {
-    //         const msg = `Reward for participation in "${survey.title}" survey`;
-    //         transferTokens(answers.radixAddress, survey.totalReward / survey.winnerCount, msg);
-    //       }
-    //     }
-    //     default:
-    //       break;
-    //   }
-    // }
+        const msg = `Reward for participation in "${survey.title}" survey`;
+      switch (survey.winnerSelection) {
+        case WinnerSelection.FirstN: {
+          if (responsesWRadixAddress.length < survey.winnerCount) {
+            const reward = Math.floor(survey.totalReward / survey.winnerCount * 10) / 10;
+            this.radixApi.transferTokens(responseData.radixAddress, reward, msg);
+          }
+        }
+        case WinnerSelection.RandomNAfterMParticipants: {
+          if (responsesWRadixAddress.length === survey.requiredParticipantCount) {
+            const reward = Math.floor(survey.totalReward / survey.winnerCount * 10) / 10;
+            const randomIndexes = await this.getRandomSequence(survey.requiredParticipantCount);
+            const winners = randomIndexes.slice(0, survey.winnerCount);
+            winners.forEach(i => this.radixApi.transferTokens(responsesWRadixAddress[i].radixAddress, reward, msg));
+          }
+        }
+        default:
+          break;
+      }
+    }
     return await this.radixApi.submitData(response, DataType.Response);
   }
 
@@ -163,30 +178,7 @@ class SurveyController {
           }
         }
       });
-    });
-
-
-    // try {
-    //   logger.info('Making request to random.org...');
-    //   const req = await axios.get(`https://www.random.org/sequences/?min=0&max=${responses.length - 1}&col=1&format=plain&rnd=new`);
-    //   const indexes: [] = req.data.split('\n');
-
-    //   const responseCountToBuy = Math.min(parseInt((tokenAmount / survey.resultPrice).toString()), indexes.length - 1);
-    //   const selectedResponses = indexes.slice(0, responseCountToBuy).map(x => responses[x]);
-      
-    //   logger.info(`Sending ${selectedResponses.length} responses...`);
-    //   item.res.send({ responses: selectedResponses, surveyId: survey.id });
-    //   item.res.status(200);
-    //   item.next();
-
-    //   const indexOfItem = surveysWaitingForResultsPurchase.findIndex(x => x.radixAddress === item.radixAddress && x.survey.id === survey.id);
-    //   surveysWaitingForResultsPurchase.splice(indexOfItem, 1);
-    //   const msg = `Purchase of ${selectedResponses.length} responses for "${survey.title}" survey`;
-
-    //   transferTokens(survey.radixAddress, selectedResponses.length * survey.resultPrice, msg)
-    // }
-    // catch {}
-      
+    });      
   }
 
   private isValidResponseForSurvey(survey: Survey, responseData: {}) {
@@ -274,6 +266,16 @@ export class InvalidResponseFormatError extends Error {
     this.__proto__ = trueProto;
   }
 }
+
+export class RepeatingResponseRadixAddress extends Error { 
+  private __proto__: Error;
+  constructor(message: string) {
+    const trueProto = new.target.prototype;
+    super(message);
+    this.__proto__ = trueProto;
+  }
+}
+
 export class InvalidSurveyFormatError extends Error { 
   private __proto__: Error;
   constructor(message?: string) {

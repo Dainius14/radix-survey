@@ -160,6 +160,132 @@ export const surveySchema = {
   }
 };
 
+const s = {
+  "type": "object",
+  "required": [
+    "title",
+    "description",
+    "surveyVisibility",
+    "responseVisibility",
+    "surveyType",
+    "questions"
+  ],
+  "else": {
+  	"additionalProperties": false
+  },
+  "properties": {
+    "title": {
+      "type": "string",
+      "minLength": 0,
+      "maxLength": 100
+    },
+    "description": {
+      "type": "string",
+      "minLength": 0,
+      "maxLength": 1000
+    },
+    "surveyVisibility": {
+      "enum": [
+        "public",
+        "private"
+      ]
+    },
+    "responseVisibility": {
+      "enum": [
+        "public",
+        "private",
+        "privateForSale"
+      ]
+    },
+    "responsePassword": {
+      "type": "string",
+      "minLength": 0,
+      "maxLength": 1000
+    },
+    "responsePrice": {
+      "type": "number",
+      "min": 0
+    },
+    "surveyType": {
+      "enum": [
+        "free",
+        "paid"
+      ]
+    },
+    "winnerSelection": {
+      "enum": [
+        "firstN",
+        "randomNAfterTime",
+        "randomNAfterMParticipants"
+      ]
+    },
+    "radixAddress": {
+      "type": "string",
+      "minLength": 51,
+      "maxLength": 51
+    },
+    "totalReward": {
+      "type": "number",
+      "minValue": 0
+    },
+    "winnerCount": {
+      "type": "integer",
+      "minValue": "1"
+    },
+    "requiredParticipantCount": {
+      "type": "integer",
+      "minValue": "1"
+    },
+    "winnerSelectionTimeLength": {
+      "type": "integer",
+      "minValue": "1"
+    },
+    "winnerSelectionTimeUnits": {
+      "enum": ["hours", "days", "weeks"]
+    },
+    "questions": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "minItems": 1,
+        "required": [
+          "questionText",
+          "type",
+          "required"
+        ],
+        "properties": {
+          "questionText": {
+            "type": "string"
+          },
+          "type": {
+            "enum": [
+              "radio",
+              "checkbox",
+              "shortText",
+              "longText"
+            ]
+          },
+          "required": {
+              "type": "boolean"
+          },
+          "answetChoices": {
+              "type": "array",
+              "items": {
+                  "type": "object",
+                  "required": ["answerText"],
+                  "properties": {
+                      "answerText": {
+                          "type": "string"
+                      }
+                  }
+              }
+          }
+        }
+      }
+    }
+  }
+}
+
 export const responseSchema = {
   "type": "object",
   "additionalProperties": false,
@@ -168,7 +294,7 @@ export const responseSchema = {
   ],
   "properties": {
     "radixAddress": {
-      "type": "string",
+      "type": ["string", "null"],
       "minLength": 51,
       "maxLength": 51
     },
@@ -177,3 +303,41 @@ export const responseSchema = {
     }
   }
 };
+
+const r = {
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+      "id",
+      "surveyId",
+      "created",
+      "answers"
+  ],
+  "properties": {
+    "id": {
+      "type": "string",
+      "minLength": 21,
+      "maxLength": 21
+    },
+    
+    "surveyId": {
+      "type": "string",
+      "minLength": 21,
+      "maxLength": 21
+    },
+    
+    "created": {
+      "type": "number"
+    },
+    
+    "radixAddress": {
+      "type": "string",
+      "minLength": 51,
+      "maxLength": 51
+    },
+    
+    "answers": {
+      "type": "object"
+    }
+  }
+}

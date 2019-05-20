@@ -45,8 +45,7 @@ function Question({ form, question, index, removeQuestion }) {
   const errorAnswer = questionAnswers.find(x => x.error);
   const errorNoAnswer = ['checkbox', 'radio'].indexOf(question.type) !== -1 && questionAnswers.length === 0 && 'This question must have at least 1 answer choice';
   const showError = (errorQuestionText && touchedQuestionText) || (errorAnswer && touchedAnswer) || (errorNoAnswer && touchedQuestionText);
-  const error = errorQuestionText ? errorQuestionText : (errorAnswer ? errorAnswer.error : ( errorNoAnswer ? errorNoAnswer : false));
-
+  const error = errorQuestionText ? errorQuestionText : ((errorAnswer && typeof errorAnswer.error !== 'object') ? errorAnswer.error : ( errorNoAnswer ? errorNoAnswer : false));
   return (
     // TODO all fields are red, when only on fails
     <Form.Item help={showError && error}

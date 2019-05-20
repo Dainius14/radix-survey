@@ -3,6 +3,7 @@ import assert from 'assert';
 import key from '../key.json';
 import SurveyController from '../src/surveyController';
 import { Survey, Response } from '../src/types';
+import { response } from 'spdy';
 
 
 describe('SurveyController', async () => {
@@ -162,6 +163,33 @@ describe('SurveyController', async () => {
         assert.strictEqual(theSame, true);
       });
     });
+
+    const responseData: any = {};
+    describe('createResponse()', () => {
+      it('should a response ID', async function() {
+        this.timeout(10000);
+        const responseId = await surveyController.createResponse(testSurveys[0].id as any, responseData);
+        assert.strictEqual(typeof responseId, 'string');
+      });
+    });
+
+describe('getResponses()', () => {
+  let responses: Response[];
+  
+  it('should return an array', async () => {
+    responses = await surveyController.getSurveyResponses(testSurveys[0].id as any);
+    assert.strictEqual(Array.isArray(responses), true);
+  });
+  it('should return an array with 1 element', () => {
+    assert.strictEqual(responses.length, 1);
+  });
+  it('should return an array with given response', () => {
+    const theSame = Object.keys(responseData.answers).every(key => {
+      return (responseData[0] as any).answers[key] === (responses[0].answers as any)[key];
+    });
+    assert.strictEqual(theSame, true);
+  });
+});
 
   });
 

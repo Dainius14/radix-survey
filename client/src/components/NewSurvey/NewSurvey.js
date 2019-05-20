@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { FormikInput, FormikTextArea, FormikInputPassword, FormikInputNumber, } from './AntField';
 import { Button, Typography, Form as AntForm, InputNumber, Radio, Select, Modal, Tooltip, Icon, message } from 'antd';
 import { Formik, Form, Field, FastField, FieldArray } from 'formik';
@@ -10,6 +10,7 @@ import QuestionList from './QuestionList';
 import { WinnerSelection, ResponseVisibility, SurveyVisibility, SurveyType } from '../../constants';
 import { request } from '../../utilities';
 import QRCode from 'qrcode.react';
+import QrReader from 'react-qr-reader'
 const { Text, Paragraph, Title } = Typography;
 const { Option } = Select;
 
@@ -26,6 +27,7 @@ function NewSurveyContainer({ history }) {
 }
 
 function NewSurveyForm({ values, ...form }) {
+
   const firstNDisabled = values.winnerSelection !== WinnerSelection.FirstN;
   const randomNAfterTimeDisabled = values.winnerSelection !== WinnerSelection.RandomNAfterTime;
   const randomNAfterMParticipantsDisabled = values.winnerSelection !== WinnerSelection.RandomNAfterMParticipants;
@@ -120,6 +122,7 @@ function NewSurveyForm({ values, ...form }) {
               
               <FastField component={FormikInput} name="radixAddress" label="Your RadixDLT account address" required
               placeholder="Your Radix wallet address" type="text" />
+              <QRReaderButton onScan={(v) => form.setFieldValue('radixAddress', v)} />
             </>
           }
         </>
@@ -290,8 +293,16 @@ function NewSurveyForm({ values, ...form }) {
           
           <FastField component={FormikInput} name="radixAddress" label="Your RadixDLT account address" required
                 placeholder="Your Radix wallet address" type="text" />
-          
-          <Paragraph>Transfer <Text strong>{values.totalReward || 0}</Text> tokens to our RadixDLT wallet.</Paragraph>
+          <QRReaderButton onScan={(v) => form.setFieldValue('radixAddress', v)} />
+          <Paragraph>
+            <Text strong>How to create a paid survey?</Text>
+            <ol style={{ marginLeft: -5 }}>
+              <li><Text>Enter your Radix wallet address above.</Text></li>
+              <li><Text>Complete this survey and submit it.</Text></li>
+              <li><Text>Transfer <Text strong>{values.totalReward || 0} Rads</Text> to out wallet, which you can find below.</Text></li>
+              <li><Text>Wait to be redirected to your survey or find a link to your survey in your RadixDLT messages.</Text></li>
+            </ol>
+          </Paragraph>
           
           <div style={{ textAlign: 'center' }}>Our wallet address is <Text code copyable>9g7MxcyYrXAFpMMMnPZD74etUAdd7kiRufpkxeuf921haFgAiNs</Text></div>
           <QRCode value="9g7MxcyYrXAFpMMMnPZD74etUAdd7kiRufpkxeuf921haFgAiNs" style={{ margin: '8px auto', display: 'block' }}/>
@@ -306,6 +317,34 @@ function NewSurveyForm({ values, ...form }) {
               style={{ margin: 'auto' }}>Create survey</Button>
     </Form>
   );
+}
+
+function QRReaderButton({ onScan }) {
+  const [ showQrScanner, setShowQrScanner ] = useState(false);
+  return <>
+    <Button type="link" style={{ paddingLeft: 0 }}
+    onClick={() => setShowQrScanner(true)}
+    >You can also click here to scan QR code of your wallet</Button>
+
+    <Modal
+      visible={showQrScanner}
+      title="QR Code Scanner"
+      footer={null}
+      onCancel={() => setShowQrScanner(false)}
+    >
+      <QrReader
+        delay={300}
+        onScan={(v) => {
+          if (v) {
+            onScan(v);
+            setShowQrScanner(false);
+          }
+        }}
+        onError={(e) => e && console.error(e)}
+        style={{ width: '100%' }}
+      />
+    </Modal>
+  </>;
 }
 
 function getValidateStatus(form, fieldName) {
