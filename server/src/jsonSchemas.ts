@@ -65,7 +65,12 @@ export const surveySchema = {
         "randomNAfterMParticipants"
       ]
     },
-    "radixAddress": {
+    "payFromRadixAddress": {
+      "type": "string",
+      "minLength": 51,
+      "maxLength": 51
+    },
+    "payToRadixAddress": {
       "type": "string",
       "minLength": 51,
       "maxLength": 51

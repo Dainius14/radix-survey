@@ -8,6 +8,7 @@ import '../../styles/NoBottomMargin.css';
 import { PageHeader, DescriptionItem } from '../PageHeader';
 import { SurveyType, ResponseVisibility, WinnerSelection } from '../../constants';
 import { format as formatDate } from 'timeago.js';
+import QRReaderButton from '../QRReaderButton';
 const { TextArea } = Input;
 const { Title, Paragraph, Text } = Typography;
 
@@ -57,6 +58,7 @@ class Survey extends React.Component {
   render() {
     const { survey, isLoading, error } = this.props;
     const { getFieldDecorator } = this.props.form;
+    console.log(this.props.form)
     
     if (isLoading || !survey) {
       return (
@@ -119,10 +121,11 @@ class Survey extends React.Component {
             <Form.Item label={<Title level={4} className="no-bottom-margin">Your Radix DLT wallet address</Title>}>
           
             {getFieldDecorator('radixAddress', {
-              rules: [{ required: false }]
+              rules: [{ required: false }, { len: 51, message: 'RadixDLT address is 51 characters long'}]
             })(
               <Input placeholder='Address of your Radix DLT wallet address where you want to receive the prize'/>
             )}
+            <QRReaderButton onScan={(v) => this.props.form.setFieldsValue({ 'radixAddress': v })} text="You can also click here to scan QR code of your wallet" />
           </Form.Item>
           }
           

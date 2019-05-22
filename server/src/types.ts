@@ -16,7 +16,8 @@ export interface Survey {
   requiredParticipantCount: number;
   winnerSelectionTimeLength: number;
   winnerSelectionTimeUnits: string;
-  radixAddress: string;
+  payFromRadixAddress: string;
+  payToRadixAddress: string;
   questions: Question[];
 
   firstResponse: number | null;

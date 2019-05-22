@@ -7,10 +7,10 @@ import '../../styles/RequiredAsteriskAfter.css';
 import '../../styles/AntFormItemLabelHeight.css';
 import '../../styles/AntFormItemNoBottomMargin.css';
 import QuestionList from './QuestionList';
+import QRReaderButton from '../QRReaderButton';
 import { WinnerSelection, ResponseVisibility, SurveyVisibility, SurveyType } from '../../constants';
 import { request } from '../../utilities';
 import QRCode from 'qrcode.react';
-import QrReader from 'react-qr-reader'
 const { Text, Paragraph, Title } = Typography;
 const { Option } = Select;
 
@@ -120,9 +120,9 @@ function NewSurveyForm({ values, ...form }) {
                   </Tooltip>
                 </>} required />
               
-              <FastField component={FormikInput} name="radixAddress" label="Your RadixDLT account address" required
+              <FastField component={FormikInput} name="payToRadixAddress" label="Your RadixDLT account address where you want to receive tokens for answers" required
               placeholder="Your Radix wallet address" type="text" />
-              <QRReaderButton onScan={(v) => form.setFieldValue('radixAddress', v)} />
+              <QRReaderButton onScan={(v) => form.setFieldValue('payToRadixAddress', v)} text="You can also click here to scan QR code of your wallet" />
             </>
           }
         </>
@@ -291,9 +291,9 @@ function NewSurveyForm({ values, ...form }) {
           </Field>
 
           
-          <FastField component={FormikInput} name="radixAddress" label="Your RadixDLT account address" required
+          <FastField component={FormikInput} name="payFromRadixAddress" label="Your RadixDLT account address from which you will be transferring tokens for the survey" required
                 placeholder="Your Radix wallet address" type="text" />
-          <QRReaderButton onScan={(v) => form.setFieldValue('radixAddress', v)} />
+          <QRReaderButton onScan={(v) => form.setFieldValue('payFromRadixAddress', v)} text="You can also click here to scan QR code of your wallet" />
           <Paragraph>
             <Text strong>How to create a paid survey?</Text>
             <ol style={{ marginLeft: -5 }}>
@@ -319,33 +319,6 @@ function NewSurveyForm({ values, ...form }) {
   );
 }
 
-function QRReaderButton({ onScan }) {
-  const [ showQrScanner, setShowQrScanner ] = useState(false);
-  return <>
-    <Button type="link" style={{ paddingLeft: 0 }}
-    onClick={() => setShowQrScanner(true)}
-    >You can also click here to scan QR code of your wallet</Button>
-
-    <Modal
-      visible={showQrScanner}
-      title="QR Code Scanner"
-      footer={null}
-      onCancel={() => setShowQrScanner(false)}
-    >
-      <QrReader
-        delay={300}
-        onScan={(v) => {
-          if (v) {
-            onScan(v);
-            setShowQrScanner(false);
-          }
-        }}
-        onError={(e) => e && console.error(e)}
-        style={{ width: '100%' }}
-      />
-    </Modal>
-  </>;
-}
 
 function getValidateStatus(form, fieldName) {
   const error = form.errors[fieldName];
@@ -434,13 +407,13 @@ async function handleSubmit(values, form, history) {
 
     if (values.responseVisibility === ResponseVisibility.PrivateForSale) {
       survey.responsePrice = values.responsePrice;
-      survey.radixAddress = values.radixAddress;
+      survey.payToRadixAddress = values.payToRadixAddress;
     }
   }
 
   if (values.surveyType === SurveyType.Paid) {
     survey.winnerSelection = values.winnerSelection;
-    survey.radixAddress = values.radixAddress;
+    survey.payFromRadixAddress = values.payFromRadixAddress;
     survey.totalReward = values.totalReward;
 
     switch (values.winnerSelection) {
@@ -531,7 +504,8 @@ const initialValues = {
   randomNAfterTimeUnits: 'hours',
   
   totalReward: 0,
-  radixAddress: '',
+  payFromRadixAddress: '',
+  payToRadixAddress: '',
 
   questions: [],
   answers: [],
@@ -638,11 +612,18 @@ const validationSchema = Yup.object().shape({
         .required('Total reward is required')
     }),
 
-  radixAddress: Yup.string().when(['surveyType', 'responseVisibility'], (surveyType, responseVisibility, schema) => {
-    if (surveyType === SurveyType.Free && responseVisibility !== ResponseVisibility.PrivateForSale) 
-      return schema.notRequired();
-    return schema.length(51, 'Radix account address is 51 characters long').required('RadixDLT account address is required')
-  }),
+    payFromRadixAddress: Yup.string().when('surveyType', (surveyType, schema) => {
+      if (surveyType === SurveyType.Free) 
+        return schema.notRequired();
+      return schema.length(51, 'Radix account address is 51 characters long').required('RadixDLT account address is required')
+    }),
+
+
+    payToRadixAddress: Yup.string().when('responseVisibility', (responseVisibility, schema) => {
+      if (responseVisibility !== ResponseVisibility.PrivateForSale) 
+        return schema.notRequired();
+      return schema.length(51, 'Radix account address is 51 characters long').required('RadixDLT account address is required')
+    }),
 
   questions: Yup.array(questionValidationSchema).min(1, 'Add at least 1 question before submitting'),
 });

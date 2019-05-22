@@ -95,7 +95,7 @@ class SurveyController {
             const transactionFrom = participants[0];
             const balance = this.radixApi.getTransactionBalance(transaction.balance);
 
-            if (transactionFrom.startsWith(survey.radixAddress) && balance >= survey.totalReward) {
+            if (transactionFrom === survey.payFromRadixAddress && balance >= survey.totalReward) {
               const id = this.radixApi.submitData(survey, DataType.Survey);
               resolve(id);
               this.radixApi.sendMessage(transactionFrom, `Your survey has been published at ${process.env.URL}/surveys/${id}`)
@@ -173,7 +173,7 @@ class SurveyController {
             resolve({ surveyId: survey.id, responses: selectedResponses });
 
             const msg = `Purchase of ${selectedResponses.length} responses for "${survey.title}" survey`;
-            this.radixApi.transferTokens(survey.radixAddress, selectedResponses.length * survey.responsePrice, msg);
+            this.radixApi.transferTokens(survey.payToRadixAddress, selectedResponses.length * survey.responsePrice, msg);
             subscribtion.unsubscribe();
           }
         }
@@ -185,23 +185,6 @@ class SurveyController {
     return true;
   }
 
-  /**
-   * Returns an array of given length with numbers 0..length in random order.
-   * @param length how many numbers to have in the sequence
-   */
-  private async getRandomSequence(length: number): Promise<number[]> {
-    if (length == 0)
-      return [];
-    else if (length == 1)
-      return [ 0 ];
-    try {
-      const req = await axios.get(`https://www.random.org/sequences/?min=0&max=${length - 1}&col=1&format=plain&rnd=new`);
-      return (req.data.split('\n') as []).slice(0, length).map(x => parseInt(x));
-    }
-    catch (error) {
-      return [];
-    }
-  }
 
   /**
    * Prepares survey by adding extra properties, removing password etc.
@@ -213,6 +196,7 @@ class SurveyController {
     const survey = { ...surveyToPrepare };
 
     if (!responses) responses = this.getSurveyResponses(survey.id);
+    else responses = responses.filter(x => x.surveyId === survey.id);
 
     survey.totalResponses = responses.length;
     if (responses.length === 0) {
@@ -237,7 +221,27 @@ class SurveyController {
     }
     
     delete survey.responsePasswordHashed;
+    delete survey.payFromRadixAddress;
+    delete survey.payToRadixAddress;
     return survey;
+  }
+
+  /**
+   * Returns an array of given length with numbers 0..length in random order.
+   * @param length how many numbers to have in the sequence
+   */
+  private async getRandomSequence(length: number): Promise<number[]> {
+    if (length == 0)
+      return [];
+    else if (length == 1)
+      return [ 0 ];
+    try {
+      const req = await axios.get(`https://www.random.org/sequences/?min=0&max=${length - 1}&col=1&format=plain&rnd=new`);
+      return (req.data.split('\n') as []).slice(0, length).map(x => parseInt(x));
+    }
+    catch (error) {
+      return [];
+    }
   }
 }
 
