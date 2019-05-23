@@ -5,6 +5,7 @@ import { PageHeader, DescriptionItem } from '../PageHeader';
 import * as SurveyListActions from '../../actions/SurveyListActions';
 import { format as formatDate } from 'timeago.js';
 import QRCode from 'qrcode.react';
+import QRReaderButton from '../QRReaderButton';
 
 const { Title, Text } = Typography;
 
@@ -129,16 +130,14 @@ const BuyResponsesForm = Form.create({ name: 'buy_responses_form' })(
       const { onSubmit, form, loading } = this.props;
       const { getFieldDecorator } = form;
       return (
-        <Form layout="vertical" onSubmit={onSubmit} style={{ width: '50%', margin: 'auto' }}>
-          <Form.Item label="First 5 symbols of your RadixDLT wallet address">
+        <Form layout="vertical" onSubmit={onSubmit} style={{ width: '70%', margin: 'auto' }}>
+          <Form.Item label="Your RadixDLT wallet address">
             {getFieldDecorator('radixAddress', {
-              rules: [
-                { required: true, message: 'Please enter at least 5 first symbols of your wallet' },
-                { min: 5, message: 'Please enter at least 5 first symbols of your wallet' }
-              ],
+              rules: [{ required: false }, { len: 51, message: 'RadixDLT address is 51 characters long' }]
             })(
-              <Input maxLength={51} onKeyDown={(e)=> e.keyCode === 13 && onSubmit()} />
+              <Input placeholder='Address of your Radix DLT wallet address from which you will the tokens' />
             )}
+            <QRReaderButton onScan={(v) => this.props.form.setFieldsValue({ 'radixAddress': v })} text="You can also click here to scan QR code of your wallet" />
           </Form.Item>
           <Button type="primary" htmlType="submit"
             onClick={this.handleFormSubmit}

@@ -15,8 +15,8 @@ function Header({ location }) {
   else if (matchPath(location.pathname, { path: '/', exact: true })
     || matchPath(location.pathname, { path: '/surveys', exact: true })
     || matchPath(location.pathname, { path: '/surveys/:surveyId', exact: true })
-    || matchPath(location.pathname, { path: '/surveys/:surveyId/results', exact: true })
-    || matchPath(location.pathname, { path: '/surveys/:surveyId/results/buy', exact: true })) {
+    || matchPath(location.pathname, { path: '/surveys/:surveyId/responses', exact: true })
+    || matchPath(location.pathname, { path: '/surveys/:surveyId/responses/buy', exact: true })) {
     initialSelectedKey = '/surveys';
   }
 
