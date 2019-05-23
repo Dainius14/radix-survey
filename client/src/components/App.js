@@ -9,6 +9,7 @@ import SurveyList from './SurveyList/SurveyList';
 import NotFound404 from './NotFound404';
 import Responses from './Survey/Responses';
 import BuyResponses from './Survey/BuyResponses';
+import Stats from './Stats';
 const { Content } = Layout;
 
 function App() {
@@ -26,6 +27,7 @@ function App() {
             <Route exact path='/surveys/:surveyId' component={Survey} />
             <Route exact path='/surveys/:surveyId/responses' component={Responses} />
             <Route exact path='/surveys/:surveyId/responses/buy' component={BuyResponses} />
+            <Route exact path='/statistics' component={Stats} />
             <Route path='*' component={NotFound404} />
           </Switch>
 

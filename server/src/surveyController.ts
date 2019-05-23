@@ -220,6 +220,28 @@ class SurveyController {
     return true;
   }
 
+  async getAllStats() {
+    const surveys = this.radixApi.getSurveys();
+    const responses = this.radixApi.getResponses();
+    
+    const totalSurveys = surveys.length;
+    
+    const publicSurveyCount = surveys.filter(x => x.surveyVisibility === SurveyVisibility.Public).length;
+    const privateSurveyCount = surveys.filter(x => x.surveyVisibility === SurveyVisibility.Private).length;
+    
+    const freeSurveyCount = surveys.filter(x => x.surveyType === SurveyType.Free).length;
+    const paidSurveyCount = surveys.filter(x => x.surveyType === SurveyType.Paid).length;
+
+    const totalReward = surveys.filter(x => x.surveyType === SurveyType.Paid).reduce((acc, x) => acc + x.totalReward, 0);
+    const avgReward = surveys.filter(x => x.surveyType === SurveyType.Paid).reduce((acc, x) => acc + (x.totalReward / x.winnerCount), 0) / paidSurveyCount;
+
+    const totalQuestions = surveys.reduce((acc, x) => acc + x.questions.length, 0);
+    const totalResponses = responses.length;
+    const avgResponses = totalSurveys / responses.length;
+    
+    return { totalSurveys, publicSurveyCount, privateSurveyCount, freeSurveyCount, paidSurveyCount,
+      totalReward, avgReward, totalQuestions, totalResponses, avgResponses };
+  }
 
   /**
    * Prepares survey by adding extra properties, removing password etc.

@@ -8,12 +8,19 @@ function Header({ location }) {
   if (matchPath(location.pathname, { path: '/surveys/create', exact: true })) {
     initialSelectedKey = '/surveys/create';
   }
+  else if (matchPath(location.pathname, { path: '/statistics', exact: true })
+    || matchPath(location.pathname, { path: '/statistics', exact: true })) {
+    initialSelectedKey = '/statistics';
+  }
   else if (matchPath(location.pathname, { path: '/', exact: true })
     || matchPath(location.pathname, { path: '/surveys', exact: true })
     || matchPath(location.pathname, { path: '/surveys/:surveyId', exact: true })
-    || matchPath(location.pathname, { path: '/surveys/:surveyId/results', exact: true })) {
+    || matchPath(location.pathname, { path: '/surveys/:surveyId/results', exact: true })
+    || matchPath(location.pathname, { path: '/surveys/:surveyId/results/buy', exact: true })) {
     initialSelectedKey = '/surveys';
   }
+
+
   return (
     <AntHeader style={{ background: 'white', paddingLeft: 24 }}>
             
@@ -30,6 +37,10 @@ function Header({ location }) {
 
         <Menu.Item key="/surveys/create">
           <NavLink to='/surveys/create' style={{ fontSize: '1rem' }}>Create a Survey</NavLink>
+        </Menu.Item>
+
+        <Menu.Item key="/statistics">
+          <NavLink to='/statistics' style={{ fontSize: '1rem' }}>Statistics</NavLink>
         </Menu.Item>
 
       </Menu>

@@ -11,7 +11,6 @@
   "author": "Dainius Dauksevicius",
   "license": "MIT",
   "dependencies": {
-    "@types/nedb": "^1.8.7",
     "ajv": "^6.10.0",
     "axios": "^0.18.0",
     "bcrypt": "^3.0.6",
@@ -30,6 +29,7 @@
     "@types/chai": "^4.1.7",
     "@types/mocha": "^5.2.6",
     "@types/nanoid": "^1.2.1",
+    "@types/nedb": "^1.8.7",
     "@types/restify": "^7.2.10",
     "@types/restify-errors": "^4.3.3",
     "chai": "^4.2.0",

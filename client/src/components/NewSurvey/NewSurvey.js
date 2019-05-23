@@ -112,6 +112,7 @@ function NewSurveyForm({ values, ...form }) {
             <>
               <FastField
                 component={FormikInputNumber}
+                formatter={(v) => `${v} Rads`}
                 name="responsePrice"
                 label={<>
                   Price for one answer&nbsp;
@@ -283,7 +284,9 @@ function NewSurveyForm({ values, ...form }) {
                             validateStatus={getValidateStatus(form, field.name)}>
                   <InputNumber value={field.value}
                               onChange={v => { form.setFieldValue(field.name, v); form.setFieldTouched(field.name); }}
-                              onBlur={() => form.setFieldTouched(field.name)}/>
+                              onBlur={() => form.setFieldTouched(field.name)}
+                              formatter={(v) => `${v} Rads`}
+                              />
                   <OnePersonReward values={form.values} />
                 </AntForm.Item>
               );

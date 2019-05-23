@@ -179,6 +179,12 @@ const s = {
   	"additionalProperties": false
   },
   "properties": {
+    "id": {
+      "type": "string",
+    },
+    "created": {
+      "type": "number",
+    },
     "title": {
       "type": "string",
       "minLength": 0,

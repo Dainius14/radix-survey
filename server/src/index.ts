@@ -3,7 +3,7 @@ import logger from './logger';
 import RadixAPI from './radixApi';
 import key from '../key.json'
 import restify from 'restify';
-import { InvalidContentError, NotFoundError, BadRequestError, UnauthorizedError } from 'restify-errors';
+import { InvalidContentError, NotFoundError, BadRequestError, UnauthorizedError, InternalServerError } from 'restify-errors';
 import SurveyController, { ItemNotFoundError, WrongResponsesPasswordError, InvalidResponseFormatError, InvalidSurveyFormatError, RepeatingResponseRadixAddress } from './surveyController';
 
 const server = restify.createServer();
@@ -13,8 +13,13 @@ const server = restify.createServer();
  * Returns survey list.
  */
 server.get('/api/surveys', async (req, res, next) => {
-  res.send(await surveyController.getPublicSurveys());
-  return next();
+  try {
+    res.send(await surveyController.getPublicSurveys());
+    return next();
+  }
+  catch (error) {
+    return next(new InternalServerError(error.message));
+  }
 });
 
 
@@ -31,7 +36,7 @@ server.get('/api/surveys/:survey_id', async (req, res, next) => {
     if (error instanceof ItemNotFoundError) {
       return next(new NotFoundError(error.message));
     }
-    else throw error;
+    else return next(new InternalServerError(error.message));
   }
 });
 
@@ -49,7 +54,7 @@ server.post('/api/surveys', async (req, res, next) => {
       logger.warn(`server.post./api/surveys.invalid_survey  [Error: ${error.message}]`);
       return next(new BadRequestError(error.message));
     }
-    else throw error;
+    else return next(new InternalServerError(error.message));
   }
 });
 
@@ -69,7 +74,7 @@ server.get('/api/surveys/:survey_id/responses', async (req, res, next) => {
     if (error instanceof WrongResponsesPasswordError) {
       return next(new UnauthorizedError(error.message));
     }
-    else throw error;
+    else return next(new InternalServerError(error.message));
   }
 });
 
@@ -90,7 +95,7 @@ server.post('/api/surveys/:survey_id/responses', async (req, res, next) => {
     if (error instanceof InvalidResponseFormatError || error instanceof RepeatingResponseRadixAddress) {
       return next(new BadRequestError(error.message));
     }
-    else throw error;
+    else return next(new InternalServerError(error.message));
   }
 });
 
@@ -108,10 +113,30 @@ server.post('/api/surveys/:survey_id/responses/buy', async (req, res, next) => {
     if (error instanceof InvalidSurveyFormatError) {
       return next(new NotFoundError(error.message));
     }
-    else throw error;
+    else return next(new InternalServerError(error.message));
   }
 });
 
+
+/**
+ * Get statistics for website.
+ */
+server.get('/api/statistics', async (req, res, next) => {
+  try {
+    const stats = await surveyController.getAllStats();
+    res.send(stats);
+    return next();
+  }
+  catch (error) {
+    if (error instanceof ItemNotFoundError) {
+      return next(new NotFoundError(error.message));
+    }
+    if (error instanceof WrongResponsesPasswordError) {
+      return next(new UnauthorizedError(error.message));
+    }
+    else return next(new InternalServerError(error.message));
+  }
+});
 
 
 
