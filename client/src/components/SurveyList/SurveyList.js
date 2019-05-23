@@ -94,10 +94,10 @@ function roundToPrecision(number, precision) {
 function AboutPage() {
   return <>
     <strong>About this website</strong><br/>
-    <Paragraph>This website lets you create and participate in surveys. When creating a survey,
+    <Paragraph>Create and participate in surveys. When creating a survey,
       you can choose to spend some RadixDLT tokens and people get a chance to win them for
       participating in your survey. <a href="https://www.radixdlt.com/" target="_blank" rel="noopener noreferrer">You can
-      read more about RadixDLT here.</a>
+      read more about RadixDLT here.</a> You can download your own RadixDLT wallet <a href="https://www.radixdlt.com/wallet/">here</a>.
     </Paragraph>
     <Divider />
   </>;

@@ -11,11 +11,13 @@
   "author": "Dainius Dauksevicius",
   "license": "MIT",
   "dependencies": {
+    "@types/nedb": "^1.8.7",
     "ajv": "^6.10.0",
     "axios": "^0.18.0",
     "bcrypt": "^3.0.6",
     "dotenv": "^8.0.0",
     "nanoid": "^2.0.1",
+    "nedb": "^1.8.0",
     "radixdlt": "^1.0.7-alpha",
     "restify": "^8.3.2",
     "restify-cors-middleware": "^1.1.1",

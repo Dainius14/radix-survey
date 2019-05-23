@@ -34,7 +34,7 @@ export default class RadixAPI {
     this.transactionSubject = this.account.transferSystem.transactionSubject;
 
     // this.subscribeToDataSystem();
-    this.subscribeToTransferSystem();
+    // this.subscribeToTransferSystem();
 
     logger.info('radix.initiliaze.connection_open');
     return Promise.resolve();

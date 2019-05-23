@@ -1,7 +1,7 @@
 import Ajv from 'ajv';
 import axios from 'axios';
 import bcrypt from 'bcrypt';
-
+import nedb from 'nedb';
 import { Survey, Response, ResponseVisibility, SurveyVisibility, SurveyType, WinnerSelection } from './types';
 import { surveySchema, responseSchema } from './jsonSchemas';
 import RadixAPI, { DataType } from './radixApi';
@@ -12,6 +12,8 @@ class SurveyController {
   private ajv: any;
   private testResponse: Ajv.ValidateFunction;
   private testSurvey: Ajv.ValidateFunction;
+  private waitingForPaymentSurveys: nedb;
+  private waitingForFinishSurveys: nedb;
 
   constructor(radixApi: RadixAPI) {
     this.radixApi = radixApi;
@@ -19,6 +21,23 @@ class SurveyController {
     this.ajv = Ajv({ allErrors: true });
     this.testSurvey = this.ajv.compile(surveySchema);
     this.testResponse = this.ajv.compile(responseSchema);
+    this.waitingForPaymentSurveys = new nedb({ filename: 'waitingForPaymentSurveys.db', autoload: true });
+    this.waitingForFinishSurveys = new nedb({ filename: 'waitingForFinishSurveys.db', autoload: true });
+
+    setInterval(() => {
+      const surveys: Survey[] = this.waitingForFinishSurveys.getAllData();
+      const finishedSurveys = surveys.filter(x => this.hasTimePassed(x.created, x.winnerSelectionTimeUnits, x.winnerSelectionTimeLength));
+      finishedSurveys.forEach(async survey => {
+        this.waitingForFinishSurveys.remove({ id: survey.id });
+        const responses = this.getSurveyResponses(survey.id);
+        const responsesWRadixAddress = responses.filter(x => x.radixAddress);
+        const reward = Math.floor(survey.totalReward / survey.winnerCount * 10) / 10;
+        const randomIndexes = await this.getRandomSequence(survey.winnerCount);
+        const winners = randomIndexes.slice(0, survey.winnerCount);
+        const msg = `Reward for participation in "${survey.title}" survey`;
+        winners.forEach(i => this.radixApi.transferTokens(responsesWRadixAddress[i].radixAddress, reward, msg));
+      });
+    }, 60 * 1000);
   }
 
   /**
@@ -83,10 +102,13 @@ class SurveyController {
       return id;
     }
     else {
-      // Survey is paid, wait for transaction
+      // Survey is paid, wait for transaction and add to temp cache
+      // Create a temp id
+      const tempId = new Date().getTime() + survey.title;
+      this.waitingForPaymentSurveys.insert({ ...survey, _id: tempId });
       return new Promise(resolve => {
         const subscription = this.radixApi.transactionSubject.subscribe({
-          next: update => {
+          next: async update => {
             const transaction = update.transaction;
             if (!transaction) return;
 
@@ -96,10 +118,23 @@ class SurveyController {
             const balance = this.radixApi.getTransactionBalance(transaction.balance);
 
             if (transactionFrom === survey.payFromRadixAddress && balance >= survey.totalReward) {
-              const id = this.radixApi.submitData(survey, DataType.Survey);
+              this.waitingForPaymentSurveys.remove({ _id: tempId })
+
+              if (this.hasTimePassed(survey.created, 'hours', 24)) {
+                // 24 hours passed since survey has been created and payment received, ignore
+                resolve();
+                subscription.unsubscribe();
+                return;
+              }
+
+              const id = await this.radixApi.submitData(survey, DataType.Survey);
               resolve(id);
               this.radixApi.sendMessage(transactionFrom, `Your survey has been published at ${process.env.URL}/surveys/${id}`)
               subscription.unsubscribe();
+
+              if (survey.winnerSelection === WinnerSelection.RandomNAfterTime) {
+                this.waitingForFinishSurveys.insert({ ...survey, id });
+              }
             }
           }
         })
@@ -242,6 +277,16 @@ class SurveyController {
     catch (error) {
       return [];
     }
+  }
+
+  private hasTimePassed(ts: number, units: string, amount: number) {
+    let time = amount * 1000;
+    switch (units) {
+      case 'days': time *= 3600 * 24; break;
+      case 'weeks': time *= 3600 * 24 * 7; break;
+      default: case 'hours': time *= 3600; break;
+    }
+    return ts + time < new Date().getTime();
   }
 }
 
