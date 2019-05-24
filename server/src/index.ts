@@ -105,7 +105,7 @@ server.post('/api/surveys/:survey_id/responses', async (req, res, next) => {
  */
 server.post('/api/surveys/:survey_id/responses/buy', async (req, res, next) => {
   try {
-    const responses = await surveyController.buyResponses(req.params.survey_id as string, req.body.radixAddress);
+    const responses = await surveyController.buyResponses(req.params.survey_id as string, req.body.radixAddress as string);
     res.send(responses);
     return next();
   }

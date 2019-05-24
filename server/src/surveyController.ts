@@ -145,7 +145,7 @@ class SurveyController {
   async createResponse(surveyId: string, responseData: { radixAddress: string }): Promise<any> {
     const isValidResponse = this.testResponse(responseData);
     if (!isValidResponse) throw new InvalidResponseFormatError(this.ajv.errorsText(this.testResponse.errors));    
-    const survey = await this.getSurveyById(surveyId);
+    const survey = await this.radixApi.getDataById(surveyId);
     if (!this.isValidResponseForSurvey(survey, responseData)) throw new InvalidResponseFormatError();
 
     // Response is valid
@@ -182,8 +182,8 @@ class SurveyController {
     return await this.radixApi.submitData(response, DataType.Response);
   }
 
-  async buyResponses(surveyId: string, radixAddressStart: string) {
-    const survey = await this.getSurveyById(surveyId);
+  async buyResponses(surveyId: string, radixAddress: string) {
+    const survey = await this.radixApi.getDataById(surveyId);
     const responses = await this.getSurveyResponses(surveyId);
     const randomIndexes = await this.getRandomSequence(responses.length);
     
@@ -197,7 +197,7 @@ class SurveyController {
           if (participants.length === 0) return;
           const transactionFrom = participants[0];
 
-          if (transactionFrom.startsWith(radixAddressStart)){
+          if (transactionFrom === radixAddress) {
             // Received transaction from address
             const balance = this.radixApi.getTransactionBalance(transaction.balance);
             
