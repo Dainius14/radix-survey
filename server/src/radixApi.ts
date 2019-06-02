@@ -169,7 +169,7 @@ export default class RadixAPI {
 
   getSurveys() {
     return Object.values(this.getDataByType(DataType.Survey))
-      .map((x) => {logger.info(x); return JSON.parse(x as string) as Survey});
+      .map((x) => JSON.parse(x as string) as Survey);
   }
 
   getResponses() {

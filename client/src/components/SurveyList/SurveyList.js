@@ -1,12 +1,14 @@
 import React from 'react';
 import { Link } from 'react-router-dom'
 import { connect } from 'react-redux';
-import { List, Typography, Icon, Divider } from 'antd';
+import { List, Typography, Icon, Divider, Button } from 'antd';
 import * as SurveyListActions from '../../actions/SurveyListActions';
 import '../../styles/MultilineCode.css';
 import '../../styles/SurveyList.css';
 import Paragraph from 'antd/lib/typography/Paragraph';
 const { Text } = Typography;
+
+const itemCount = 8;
 
 const IconText = ({ type, text }) => (
   <span style={{ marginRight: 24 }}>
@@ -21,7 +23,7 @@ class SurveyList extends React.Component {
     // Get surveys from server if not all are loaded
     const { surveys, getSurveys } = this.props;
     if (!surveys.allLoaded) {
-      getSurveys();
+      getSurveys(0, itemCount);
     }
   }
 
@@ -45,6 +47,17 @@ class SurveyList extends React.Component {
           <AboutPage />
         }
         <List dataSource={surveys.data.items}
+              loadMore={
+                <div
+                  style={{ textAlign: 'center', marginTop: 8 }}
+                >
+                  <Button
+                    onClick={() => this.props.getSurveys(surveys.data.items.length, itemCount)}
+                  >
+                    Load more
+                  </Button>
+                </div>
+              }
               itemLayout="vertical"
               loading={surveys.isLoading}
               renderItem={id => {
@@ -112,7 +125,7 @@ function mapStateToProps(state, ownProps) {
 
 function mapDispatchToProps(dispatch) {
   return {
-    getSurveys: () => dispatch(SurveyListActions.getSurveys())
+    getSurveys: (start, limit) => dispatch(SurveyListActions.getSurveys(start, limit))
   }
 }; 
 

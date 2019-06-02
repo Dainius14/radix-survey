@@ -28,15 +28,31 @@ const surveys = (state = initialState, action) => {
         return acc;
       }, {});
 
-      return update(state, {
-        error: {$set: null},
-        isLoading: {$set: false},
-        allLoaded: {$set: true},
-        data: {
-          $merge: surveyMap,
-          items: {$set: items}
-        }
-      });
+      if (!state.allLoaded) {
+        return update(state, {
+          error: {$set: null},
+          isLoading: {$set: false},
+          allLoaded: {$set: true},
+          data: {
+            $set: {
+              items,
+              ...surveyMap
+            }
+          }
+        });
+      }
+      else {
+        return update(state, {
+          error: {$set: null},
+          isLoading: {$set: false},
+          allLoaded: {$set: true},
+          data: {
+            $merge: surveyMap,
+            items: {$push: items}
+          }
+        });
+      }
+
     }
 
     case Actions.GET_SURVEYS_ERROR: {

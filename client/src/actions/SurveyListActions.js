@@ -117,12 +117,12 @@ export const buySurveyResultsError = (error) => ({
 
 const API_ENDPOINT = process.env.REACT_APP_API_ENDPOINT || window.location.origin;
 
-export function getSurveys() {
+export function getSurveys(start, limit) {
   return async dispatch => {
     console.debug('getSurveys() request');
     dispatch(getSurveysRequest());
     try {
-      const response = await request(`${API_ENDPOINT}/api/surveys`, {
+      const response = await request(`${API_ENDPOINT}/api/surveys?start=${start}&limit=${limit}`, {
         method: 'GET'
       });
       console.debug('getSurveys() success', response);

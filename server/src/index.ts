@@ -14,7 +14,7 @@ const server = restify.createServer();
  */
 server.get('/api/surveys', async (req, res, next) => {
   try {
-    res.send(await surveyController.getPublicSurveys());
+    res.send(await surveyController.getPublicSurveys(parseInt(req.query.start), parseInt(req.query.limit)));
     return next();
   }
   catch (error) {
@@ -142,6 +142,7 @@ server.get('/api/statistics', async (req, res, next) => {
 
 // Apply middleware
 server.use(restify.plugins.bodyParser());
+server.use(restify.plugins.queryParser());
 server.use(restify.plugins.fullResponse());
 // For POST methods, require application/json header
 server.use((req, res, next) => {

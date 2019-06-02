@@ -43,12 +43,16 @@ class SurveyController {
   /**
    * Returns a list of surveys, that have property surveyVisibility set to Public.
    */
-  async getPublicSurveys(): Promise<Survey[]> {
+  async getPublicSurveys(start: number, limit: number): Promise<Survey[]> {
     const responses = this.radixApi.getResponses();
-    const res = await Promise.all(this.radixApi.getSurveys()
-      .filter(x => x.surveyVisibility === SurveyVisibility.Public)
-      .map(async x => await this.prepareSurveyData(x, responses)))
-      return res;
+    const res = await Promise.all(
+      this.radixApi.getSurveys()
+        .filter(x => x.surveyVisibility === SurveyVisibility.Public)
+        .sort((a, b) => b.created - a.created)
+        .slice(start || 0, start + limit || 20)
+        .map(async x => await this.prepareSurveyData(x, responses))
+    );
+    return res;
   }
 
   /**
