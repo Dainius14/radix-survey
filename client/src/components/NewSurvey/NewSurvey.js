@@ -115,7 +115,7 @@ function NewSurveyForm({ values, ...form }) {
                 formatter={(v) => `${v} Rads`}
                 name="responsePrice"
                 label={<>
-                  Price for one answer&nbsp;
+                  Price for one response&nbsp;
                   <Tooltip title="This is the price the person buying answers of your survey will pay for one answer">
                     <Icon type="question-circle-o" style={{ verticalAlign: 'initial' }} />
                   </Tooltip>

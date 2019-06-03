@@ -138,14 +138,14 @@ class Survey extends React.Component {
                 {question.type === 'shortText' && getFieldDecorator(index.toString(), {
                   rules: [{ required: question.required, message: 'This answer is required' }]
                 })(
-                  <Input placeholder='Your answer...'/>
+                  <Input placeholder='Your answer...' maxLength={100}/>
                 )}
 
 
                 {question.type === 'longText' && getFieldDecorator(index.toString(), {
                   rules: [{ required: question.required, message: 'This answer is required' }]
                 })(
-                  <TextArea placeholder='Your answer...'/>
+                  <TextArea placeholder='Your answer...' maxLength={500}/>
                 )}
 
 
